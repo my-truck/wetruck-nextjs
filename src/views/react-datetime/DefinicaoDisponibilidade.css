@@ -1,0 +1,85 @@
+/* src/views/react-datetime/DefinicaoDisponibilidade.css */
+
+/* Estilizar o contêiner do calendário */
+.custom-datetime .rdtPicker {
+    width: 100% !important; /* Ocupa toda a largura disponível */
+    font-size: 0.9rem; /* Reduzir o tamanho da fonte para melhor proporcionalidade */
+    border-radius: 8px; /* Bordas arredondadas */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  }
+  
+  /* Estilizar os cabeçalhos do calendário */
+  .custom-datetime .rdtPicker .rdtPrev, 
+  .custom-datetime .rdtPicker .rdtNext {
+    color: #3182ce; /* Azul Chakra UI */
+    font-size: 1rem; /* Tamanho menor para melhor proporcionalidade */
+  }
+  
+  /* Estilizar os títulos dos meses e anos */
+  .custom-datetime .rdtPicker .rdtCalendar .rdtMonths .rdtSwitch {
+    font-size: 1rem;
+    color: #2D3748; /* Azul escuro Chakra UI */
+    font-weight: bold;
+  }
+  
+  /* Estilizar os dias */
+  .custom-datetime .rdtPicker .rdtCalendar .rdtDay {
+    width: 35px !important; /* Reduzir a largura */
+    height: 35px !important; /* Reduzir a altura */
+    line-height: 35px !important; /* Centralizar o texto verticalmente */
+    font-size: 0.9rem !important; /* Reduzir o tamanho da fonte */
+    color: #4A5568; /* Gray Chakra UI */
+  }
+  
+  /* Estilizar os dias ativos (selecionados) */
+  .custom-datetime .rdtPicker .rdtCalendar .rdtDay.rdtActive {
+    background: #3182ce !important; /* Azul Chakra UI */
+    color: white !important;
+    border-radius: 50%;
+  }
+  
+  /* Estilizar os dias em hover */
+  .custom-datetime .rdtPicker .rdtCalendar .rdtDay:hover {
+    background: #bee3f8;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+  
+  /* Estilizar o input de seleção de data */
+  .custom-datetime .rdtInput {
+    width: 100%;
+    padding: 6px 10px; /* Reduzir o padding para melhor proporcionalidade */
+    border: 1px solid #CBD5E0; /* Gray Chakra UI */
+    border-radius: 4px;
+    font-size: 0.9rem; /* Reduzir o tamanho da fonte */
+  }
+  
+  /* Estilizar o input quando está focado */
+  .custom-datetime .rdtInput:focus {
+    outline: none;
+    border-color: #3182ce; /* Azul Chakra UI */
+    box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2); /* Sombra azul suave */
+  }
+  
+  /* Ajustes para dispositivos móveis */
+  @media (max-width: 767px) {
+    /* Reduzir o tamanho da fonte dos cabeçalhos */
+    .custom-datetime .rdtPicker .rdtCalendar .rdtDay {
+      width: 30px !important;
+      height: 30px !important;
+      line-height: 30px !important;
+      font-size: 0.8rem !important;
+    }
+  
+    /* Ajustar o tamanho da fonte nos inputs */
+    .custom-datetime .rdtInput {
+      font-size: 0.8rem; /* Reduzir o tamanho da fonte */
+      padding: 5px 8px !important; /* Ajustar padding */
+    }
+  
+    /* Ajustar o tamanho da fonte nos títulos dos meses */
+    .custom-datetime .rdtPicker .rdtCalendar .rdtMonths .rdtSwitch {
+      font-size: 0.9rem;
+    }
+  }
+  
