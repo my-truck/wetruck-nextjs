@@ -1,14 +1,59 @@
-import { Box, Flex, Image } from '@chakra-ui/react';
+// src/components/navbar/AdminNavbar.js
+
+import { Box, Flex, Image, useToast } from '@chakra-ui/react';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 import AdminNavbarLinks from './NavbarLinksAdmin';
 import UserProfileMenu from './UserProfileMenu';
+import { io } from 'socket.io-client'; // Importa o io do socket.io-client
 
 // Importa a logo
 import LogoWeTruck from '../../assets/images/logotruckpreto.png';
 
 export default function AdminNavbar(props) {
   const [scrolled, setScrolled] = useState(false);
+  const [notifications, setNotifications] = useState([]); // Estado para notificações
+  const [socketConnected, setSocketConnected] = useState(false); // Estado para status do socket
+  const toast = useToast(); // Hook do Chakra para toast notifications
+
+  useEffect(() => {
+    const socket = io('http://etc.wetruckhub.com/orders/socket', {
+      query: { userId: 16 }, // Substitua 'variavel/ variavel do id' pelo ID dinâmico do usuário, se disponível
+    });
+
+    // Evento de conexão
+    socket.on('connect', () => {
+      console.log('Conectado ao servidor!');
+      setSocketConnected(true); // Atualiza o status da conexão
+      socket.emit('message', 'Olá, servidor!');
+    });
+
+    // Evento para receber novas ordens
+    socket.on('new_order', (data) => {
+      console.log('Nova ordem recebida:', data);
+      setNotifications((prev) => [...prev, data]);
+
+      // Exibir uma notificação toast
+      toast({
+        title: 'Nova Ordem',
+        description: `Você recebeu uma nova ordem de ${data.userName || 'um cliente'}.`,
+        status: 'info',
+        duration: 5000,
+        isClosable: true,
+      });
+    });
+
+    // Evento de desconexão
+    socket.on('disconnect', () => {
+      console.log('Desconectado do servidor!');
+      setSocketConnected(false); // Atualiza o status da conexão
+    });
+
+    // Limpeza ao desmontar o componente
+    return () => {
+      socket.disconnect();
+    };
+  }, [toast]); // Dependência de 'toast' para evitar avisos do ESLint
 
   useEffect(() => {
     window.addEventListener('scroll', changeNavbar);
@@ -96,6 +141,8 @@ export default function AdminNavbar(props) {
             secondary={props.secondary}
             fixed={props.fixed}
             scrolled={scrolled}
+            notifications={notifications} // Passa as notificações como props
+            socketConnected={socketConnected} // Passa o status da conexão como props
           />
         </Flex>
       </Flex>

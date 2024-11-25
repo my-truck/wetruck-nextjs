@@ -1,3 +1,5 @@
+// src/components/auth/Login.js
+
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -54,13 +56,16 @@ function Login() {
       if (response.status === 200 || response.status === 201) {
         const data = response.data;
         const token = data.data.access_token;
+        const userId = data.data.user_id; // Extrai o user_id da resposta
 
-        if (token) {
+        if (token && userId) {
           localStorage.setItem("authToken", token);
+          localStorage.setItem("user_id", userId); // Armazena o user_id no localStorage
           console.log('Token recebido e armazenado:', token);
+          console.log('User ID recebido e armazenado:', userId);
           navigate("/admin/default");
         } else {
-          setError("Token não recebido. Por favor, tente novamente.");
+          setError("Token ou User ID não recebido. Por favor, tente novamente.");
         }
       } else {
         const errorData = response.data;
