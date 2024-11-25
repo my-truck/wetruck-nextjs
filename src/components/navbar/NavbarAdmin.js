@@ -10,21 +10,93 @@ import { io } from 'socket.io-client'; // Importa o io do socket.io-client
 // Importa a logo
 import LogoWeTruck from '../../assets/images/logotruckpreto.png';
 
+// Função para decodificar o token JWT (opcional, para verificação adicional)
+function decodeJWT(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload;
+  } catch (e) {
+    console.error('Token inválido:', e);
+    return null;
+  }
+}
+
 export default function AdminNavbar(props) {
   const [scrolled, setScrolled] = useState(false);
   const [notifications, setNotifications] = useState([]); // Estado para notificações
-  const [socketConnected, setSocketConnected] = useState(false); // Estado para status do socket
   const toast = useToast(); // Hook do Chakra para toast notifications
 
   useEffect(() => {
+    // Recupera o token de autenticação e user_id do localStorage
+    const token = localStorage.getItem('authToken');
+    const userId = localStorage.getItem('user_id');
+
+    console.log('Recuperando Token e User ID do localStorage:');
+    console.log('authToken:', token);
+    console.log('user_id:', userId);
+
+    // Verifique se o token e user_id existem
+    if (!token || !userId) {
+      console.error('Token de autenticação ou user_id não encontrado!');
+      toast({
+        title: 'Erro de Autenticação',
+        description: 'Token de autenticação ou user_id não encontrado. Por favor, faça login novamente.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      // Redirecionar para a página de login
+      window.location.href = '/login';
+      return;
+    }
+
+    // Opcional: Decodificar o token para verificar a validade e outros detalhes
+    const decoded = decodeJWT(token);
+    if (decoded) {
+      const currentTime = Math.floor(Date.now() / 1000); // Tempo atual em segundos
+      if (decoded.exp < currentTime) {
+        console.error('Token expirado!');
+        toast({
+          title: 'Sessão Expirada',
+          description: 'Por favor, faça login novamente.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+        window.location.href = '/login';
+        return;
+      }
+    }
+
+    // Converter user_id para número, se necessário
+    const parsedUserId = parseInt(userId, 10);
+    if (isNaN(parsedUserId)) {
+      console.error('user_id armazenado não é um número válido!');
+      toast({
+        title: 'Erro de Usuário',
+        description: 'Identificador do usuário não é válido. Por favor, faça login novamente.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      window.location.href = '/login';
+      return;
+    }
+
+    // Estabelece a conexão com o WebSocket, enviando o token via auth e user_id via query
+    console.log('Estabelecendo conexão com o WebSocket...');
     const socket = io('http://etc.wetruckhub.com/orders/socket', {
-      query: { userId: 16 }, // Substitua 'variavel/ variavel do id' pelo ID dinâmico do usuário, se disponível
+      auth: {
+        token: token, // Envia o token no campo 'auth'
+      },
+      query: { userId: parsedUserId }, // Envia o user_id via query string com a chave correta 'userId'
+      transports: ['websocket'], // Força a utilização do WebSocket
+      secure: true, // Se estiver usando HTTPS no backend
     });
 
     // Evento de conexão
     socket.on('connect', () => {
       console.log('Conectado ao servidor!');
-      setSocketConnected(true); // Atualiza o status da conexão
       socket.emit('message', 'Olá, servidor!');
     });
 
@@ -46,7 +118,18 @@ export default function AdminNavbar(props) {
     // Evento de desconexão
     socket.on('disconnect', () => {
       console.log('Desconectado do servidor!');
-      setSocketConnected(false); // Atualiza o status da conexão
+    });
+
+    // Evento de erro
+    socket.on('connect_error', (err) => {
+      console.error('Erro de conexão:', err.message);
+      toast({
+        title: 'Erro de Conexão',
+        description: `Não foi possível conectar ao servidor: ${err.message}`,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     });
 
     // Limpeza ao desmontar o componente
@@ -142,7 +225,7 @@ export default function AdminNavbar(props) {
             fixed={props.fixed}
             scrolled={scrolled}
             notifications={notifications} // Passa as notificações como props
-            socketConnected={socketConnected} // Passa o status da conexão como props
+            // socketConnected={socketConnected} // Removido
           />
         </Flex>
       </Flex>
