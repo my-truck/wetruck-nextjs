@@ -85,7 +85,7 @@ export default function AdminNavbar(props) {
 
     // Estabelece a conexão com o WebSocket, enviando o token via auth e user_id via query
     console.log('Estabelecendo conexão com o WebSocket...');
-    const socket = io('http://etc.wetruckhub.com/orders/socket', {
+    const socket = io('https://etc.wetruckhub.com/orders/socket', {
       auth: {
         token: token, // Envia o token no campo 'auth'
       },
