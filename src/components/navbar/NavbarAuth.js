@@ -79,7 +79,7 @@ export default function AuthNavbar(props) {
   let dashboardsObject = getLinks("Dashboards");
   let nftsObject = getLinks("NFTs");
   let logoColor = useColorModeValue("white", "white");
-  // Chakra color mode
+
 
   const textColor = useColorModeValue("navy.700", "white");
   let menuBg = useColorModeValue("white", "navy.900");
