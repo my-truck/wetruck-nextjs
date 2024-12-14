@@ -1,4 +1,4 @@
-// src/views/confirmacao/pa.jsx
+// src/views/confirmacao/page.jsx
 
 import React from 'react';
 import { Box, Text, Button, VStack } from '@chakra-ui/react';
