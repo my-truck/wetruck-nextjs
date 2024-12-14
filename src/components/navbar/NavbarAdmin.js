@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import AdminNavbarLinks from './NavbarLinksAdmin';
 import UserProfileMenu from './UserProfileMenu';
 import { io } from 'socket.io-client'; // Importa o io do socket.io-client
+import axiosInstance from '../../axiosInstance'; // Importa a instância personalizada do Axios
 
 // Importa a logo
 import LogoWeTruck from '../../assets/images/logotruckpreto.png';
@@ -50,7 +51,6 @@ export default function AdminNavbar(props) {
       return;
     }
 
-    // Opcional: Decodificar o token para verificar a validade e outros detalhes
     const decoded = decodeJWT(token);
     if (decoded) {
       const currentTime = Math.floor(Date.now() / 1000); // Tempo atual em segundos
@@ -83,7 +83,34 @@ export default function AdminNavbar(props) {
       return;
     }
 
-    // Estabelece a conexão com o WebSocket, enviando o token via auth e user_id via query
+ 
+    const fetchNotifications = async () => {
+      try {
+        const response = await axiosInstance.get('/work/get-notfications' 
+          
+        );
+
+        if (response.data && Array.isArray(response.data.notifications)) {
+          setNotifications(response.data.notifications);
+          console.log('Notificações persistidas carregadas:', response.data.notifications);
+        } else {
+          console.warn('Formato de resposta inesperado:', response.data);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar notificações persistidas:', error);
+        toast({
+          title: 'Erro ao carregar notificações',
+          description: 'Não foi possível carregar as notificações. Tente novamente mais tarde.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+
+ 
+    fetchNotifications();
+
     console.log('Estabelecendo conexão com o WebSocket...');
     const socket = io('https://etc.wetruckhub.com/orders/socket', {
       auth: {
