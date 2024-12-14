@@ -86,7 +86,7 @@ export default function AdminNavbar(props) {
  
     const fetchNotifications = async () => {
       try {
-        const response = await axiosInstance.get('/work/get-notfications' 
+        const response = await axiosInstance.get('/work/get-notifications' 
           
         );
 
