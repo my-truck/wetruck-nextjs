@@ -236,7 +236,7 @@ export default function CalculoValorFinal() {
         description: `Transporte de carga de ${formData.origin.city} para ${formData.destination.city}`,
         value: formData.value,
         distance: formData.distance,
-        // Removido: userId: formData.userId, // Removido o userId do payload
+         
         origin: {
           address: formData.origin.address,
           city: formData.origin.city,

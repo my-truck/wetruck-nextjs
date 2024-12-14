@@ -7,7 +7,7 @@ const VehicleFormContext = createContext();
 export const VehicleFormProvider = ({ children }) => {
   const [formData, setFormData] = useState({
     vehicleClass: '',      // Armazena o 'id' da classe
-    vehicleType: '',       // Renomeado de 'bodyType' para 'vehicleType'
+    vehicleType: '',       
     description: '',
     loadTypeId: '',
     licensePlate: '',

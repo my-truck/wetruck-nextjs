@@ -1,41 +1,70 @@
-// chakra imports
-import { Icon, Flex, Text, useColorModeValue } from "@chakra-ui/react";
-import { MdUpgrade } from "react-icons/md";
+// src/components/menu/ItemContent.js
+
+import { Icon, Flex, Text, useColorModeValue, Box } from "@chakra-ui/react";
+import { MdLocalShipping, MdCheckCircle } from "react-icons/md";
 import React from "react";
 
 export function ItemContent(props) {
+  const { type, info } = props;
   const textColor = useColorModeValue("navy.700", "white");
+
+  let icon = MdLocalShipping;
+  let title = "Novo Frete Disponível";
+  let description = "Há um novo frete que corresponde aos seus critérios.";
+
+  if (type === "freteAceito") {
+    icon = MdCheckCircle;
+    title = "Frete Aceito";
+    description = "Seu pedido de frete foi aceito com sucesso!";
+  }
+
+  // Define a cor de fundo com base no tipo de notificação
+  const bgGradient = type === "freteAceito"
+    ? "linear(to-r, green.400, green.600)" // Verde para aceitação
+    : "linear(to-r, purple.400, purple.600)"; // Roxo para novo frete
+
   return (
-    <>
-      <Flex
-        justify='center'
-        align='center'
-        borderRadius='16px'
-        minH={{ base: "60px", md: "70px" }}
-        h={{ base: "60px", md: "70px" }}
-        minW={{ base: "60px", md: "70px" }}
-        w={{ base: "60px", md: "70px" }}
-        me='14px'
-        bg='linear-gradient(135deg, #868CFF 0%, #4318FF 100%)'>
-        <Icon as={MdUpgrade} color='white' w={8} h={14} />
-      </Flex>
-      <Flex flexDirection='column'>
+    <Flex
+      align="center"
+      p="12px"
+      borderRadius="12px"
+      bg={useColorModeValue("gray.50", "gray.800")}
+      boxShadow="base"
+      transition="all 0.2s ease-in-out"
+      _hover={{ transform: "scale(1.02)" }}
+    > 
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        borderRadius="12px"
+        minH="60px"
+        h="60px"
+        minW="60px"
+        w="60px"
+        me="16px"
+        bg={bgGradient}
+        boxShadow="md"
+      >
+        <Icon as={icon} color="black" w={10} h={10} />
+      </Box>
+      <Flex flexDirection="column">
         <Text
-          mb='5px'
-          fontWeight='bold'
+          mb="4px"
+          fontWeight="bold"
           color={textColor}
-          fontSize={{ base: "md", md: "md" }}>
-          New Update: {props.info}
+          fontSize="lg"
+        >
+          {title}: {info}
         </Text>
-        <Flex alignItems='center'>
-          <Text
-            fontSize={{ base: "sm", md: "sm" }}
-            lineHeight='100%'
-            color={textColor}>
-            A new update for your downloaded item is available!
-          </Text>
-        </Flex>
+        <Text
+          fontSize="sm"
+          lineHeight="short"
+          color={useColorModeValue("gray.600", "gray.300")}
+        >
+          {description}
+        </Text>
       </Flex>
-    </>
+    </Flex>
   );
 }

@@ -39,7 +39,7 @@ export default function UserProfileMenu({ userName }) {
           <Avatar
             size="sm"
             name={userName}
-            src="https://bit.ly/dan-abramov"
+            src=""
             borderRadius="8px"
           />
           <Flex alignItems="center" gap="12px">

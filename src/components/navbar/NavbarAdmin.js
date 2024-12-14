@@ -90,7 +90,7 @@ export default function AdminNavbar(props) {
         token: token, // Envia o token no campo 'auth'
       },
       query: { userId: parsedUserId }, // Envia o user_id via query string com a chave correta 'userId'
-      transports: ['websocket'], // Força a utilização do WebSocketa
+      transports: ['websocket'], // Força a utilização do WebSocket
       secure: true, // Se estiver usando HTTPS no backend
     });
 
