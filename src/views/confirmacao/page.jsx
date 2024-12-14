@@ -8,7 +8,7 @@ export default function Confirmacao() {
   const navigate = useNavigate();
 
   const handleVoltarInicio = () => {
-    navigate('/admin/default'); // Ajuste conforme a rota inicial desejada
+    navigate('/admin/default'); // conforme a rota inicial desejada
   };
 
   return (
