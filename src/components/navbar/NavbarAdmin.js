@@ -114,7 +114,7 @@ export default function AdminNavbar(props) {
     console.log('Estabelecendo conexão com o WebSocket...');
     const socket = io('https://etc.wetruckhub.com/orders/socket', {
       auth: {
-        token: token, // Envia o token no campo 'auth'
+        token: token, // Envia o token no campo 'ath'
       },
       query: { userId: parsedUserId }, // Envia o user_id via query string com a chave correta 'userId'
       transports: ['websocket'], // Força a utilização do WebSocket
