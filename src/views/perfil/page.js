@@ -114,10 +114,10 @@ export default function Profile() {
           />
 
           <Text fontSize="sm" fontWeight="medium" color="gray.500" mb={2}>
-            Cidade, Estado, País:
+            Cidade:
           </Text>
           <Input
-            placeholder="Cidade, Estado, País"
+            placeholder="Cidade"
             variant="filled"
             focusBorderColor="orange.400"
             mb={4}
