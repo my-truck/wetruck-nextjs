@@ -15,10 +15,12 @@ import {
 } from '@chakra-ui/react';
 import { MdNotificationsNone, MdInfoOutline } from 'react-icons/md';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom'; // Hook para navegação
 import { ItemContent } from '../../components/menu/ItemContent';
 import LogoutButton from './LogoutButton';
 
 export default function NavbarLinksAdmin({ notifications = [], socketConnected, setNotifications, fetchNotifications }) {
+  const navigate = useNavigate(); // Hook para navegação
   const textColor = useColorModeValue('gray.700', 'whiteAlpha.900');
   const shadow = useColorModeValue(
     '0px 4px 12px rgba(0, 0, 0, 0.1)',
@@ -31,11 +33,8 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected, 
     console.log(`WebSocket está ${socketConnected ? 'conectado' : 'desconectado'}.`);
   };
 
-  // Função para remover a notificação aceita da lista
   const handleAccept = (acceptedId) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== acceptedId));
-    // Opcional: Você pode chamar fetchNotifications aqui se preferir atualizar completamente a lista
-    // fetchNotifications();
   };
 
   return (
@@ -75,7 +74,7 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected, 
           maxH="500px"
           overflowY="auto"
           bg={useColorModeValue('white', 'gray.800')}
-          mx={{ base: 'auto', md: '0' }} // Centraliza no mobile
+          mx={{ base: 'auto', md: '0' }}
         >
           <Flex w="100%" mb="16px">
             <Text fontSize="md" fontWeight="600" color={textColor}>
@@ -101,7 +100,7 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected, 
                     type={notification.type}
                     info={notification}
                     onAccept={handleAccept}
-                    fetchNotifications={fetchNotifications} // Passa a função para re-fetch
+                    fetchNotifications={fetchNotifications}
                   />
                 </MenuItem>
               ))
@@ -143,16 +142,17 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected, 
           borderRadius="lg"
           mt="14px"
           bg={useColorModeValue('white', 'gray.800')}
-          mx={{ base: 'auto', md: '0' }} // Centraliza no mobile
+          mx={{ base: 'auto', md: '0' }}
         >
           <Flex flexDirection="column" p="8px">
             <MenuItem
+              onClick={() => navigate('/admin/perfil')} // Certifique-se de que o caminho está correto
               _hover={{ bg: 'gray.100', color: 'blue.500' }}
               borderRadius="md"
               px="12px"
             >
-              <Text fontSize="sm" color={useColorModeValue('gray.700', 'whiteAlpha.900')}>
-                Configurações do Perfil
+              <Text fontSize="sm" color={textColor}>
+                Perfil
               </Text>
             </MenuItem>
             <MenuItem
@@ -172,6 +172,6 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected, 
 NavbarLinksAdmin.propTypes = {
   notifications: PropTypes.array.isRequired,
   socketConnected: PropTypes.bool.isRequired,
-  setNotifications: PropTypes.func.isRequired, // Adicionado para atualizar notificações
-  fetchNotifications: PropTypes.func.isRequired, // Adicionado para re-fetch das notificações
+  setNotifications: PropTypes.func.isRequired,
+  fetchNotifications: PropTypes.func.isRequired,
 };

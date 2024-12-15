@@ -1,10 +1,16 @@
+// src/routes.js
+
 import React from 'react';
 import { Icon } from '@chakra-ui/react';
-import { MdHome, MdLock, MdDirectionsCar, MdLocalShipping, MdDateRange } from 'react-icons/md';
-import EscolhaOrigemDestino from './views/origemedestino/page';
-import DetalhesCarga from './views/dadoscarga/page';
-import AgendarDataHorario from './views/agendar/page';
-import CalculoValorFinal from './views/calculovalorfinal/page'; // Importação da nova página
+import {
+  MdHome,
+  MdLock,
+  MdDirectionsCar,
+  MdLocalShipping,
+  MdDateRange,
+} from 'react-icons/md';
+
+// Importação das Páginas
 import MainDashboard from './views/admin/default';
 import Login from './views/auth/login/page';
 import Signup from './views/auth/signup/page';
@@ -14,8 +20,23 @@ import Motorista from './views/motorista/page';
 import Frete from './views/frete/page';
 import UploadFotosCaminhao from './views/upload-fotos-caminhao/page';
 import Confirmacao from './views/confirmacao/page';
+import EscolhaOrigemDestino from './views/origemedestino/page';
+import DetalhesCarga from './views/dadoscarga/page';
+import AgendarDataHorario from './views/agendar/page';
+import CalculoValorFinal from './views/calculovalorfinal/page';
+import Profile from './views/perfil/page';
 
+// Configuração das Rotas
 const routes = [
+  // Rotas do Painel de Admin
+
+  {
+    name: 'Perfil',
+    layout: '/admin',
+    path: '/perfil', // Adicione essa rota
+    component: <Profile />,
+    sidebar: false, // Se não quiser exibir no sidebar
+  },
   {
     name: 'Página Inicial',
     layout: '/admin',
@@ -52,7 +73,6 @@ const routes = [
     name: 'Escolha Origem e Destino',
     layout: '/admin',
     path: '/origemedestino',
-    icon: <Icon as={MdHome} width="20px" height="20px" color="inherit" />,
     component: <EscolhaOrigemDestino />,
     sidebar: false,
   },
@@ -60,7 +80,6 @@ const routes = [
     name: 'Detalhes da Carga',
     layout: '/admin',
     path: '/dadoscarga',
-    icon: <Icon as={MdHome} width="20px" height="20px" color="inherit" />,
     component: <DetalhesCarga />,
     sidebar: false,
   },
@@ -68,7 +87,6 @@ const routes = [
     name: 'Confirmação',
     layout: '/admin',
     path: '/confirmacao',
-    icon: <Icon as={MdHome} width="20px" height="20px" color="inherit" />,
     component: <Confirmacao />,
     sidebar: false,
   },
@@ -83,11 +101,12 @@ const routes = [
   {
     name: 'Cálculo do Valor Final',
     layout: '/admin',
-    path: '/CalculoValorFinal', // Nova rota
-    icon: <Icon as={MdHome} width="20px" height="20px" color="inherit" />,
+    path: '/calculovalorfinal', // Corrigido para manter lowercase
     component: <CalculoValorFinal />,
     sidebar: false,
   },
+
+  // Rotas de Autenticação
   {
     name: 'Login',
     layout: '/auth',
@@ -97,6 +116,7 @@ const routes = [
     sidebar: false,
   },
   {
+    name: 'Cadastro',
     layout: '/auth',
     path: '/signup',
     component: <Signup />,
@@ -106,7 +126,6 @@ const routes = [
     name: 'Esqueci a Senha',
     layout: '/auth',
     path: '/forgot-password',
-    icon: <Icon as={MdLock} width="20px" height="20px" color="inherit" />,
     component: <ForgotPassword />,
     sidebar: false,
   },
@@ -114,7 +133,6 @@ const routes = [
     name: 'Redefinir Senha',
     layout: '/auth',
     path: '/reset-password',
-    icon: <Icon as={MdLock} width="20px" height="20px" color="inherit" />,
     component: <ResetPassword />,
     sidebar: false,
   },

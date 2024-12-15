@@ -8,23 +8,25 @@ import RTLLayout from './layouts/rtl';
 import { ChakraProvider } from '@chakra-ui/react';
 import initialTheme from './theme/theme';
 import { useState } from 'react';
-import PrivateRoute from './PrivateRoute'; // Importa o PrivateRoute
-import { VehicleFormProvider } from './contexts/VehicleFormContext'; // Importa o VehicleFormProvider
-import { FormProvider } from './contexts/FormContext'; // Importa o FormProvider
-import { PedidoFormProvider } from './contexts/PedidoFormContext'; // Importa o PedidoFormProvider
-import { SocketProvider } from './contexts/SocketContext'; // Importa o SocketProvider
+import PrivateRoute from './PrivateRoute';
+import { VehicleFormProvider } from './contexts/VehicleFormContext';
+import { FormProvider } from './contexts/FormContext';
+import { PedidoFormProvider } from './contexts/PedidoFormContext';
+import { SocketProvider } from './contexts/SocketContext';
 
 export default function Main() {
   const [currentTheme, setCurrentTheme] = useState(initialTheme);
-  
+
   return (
     <ChakraProvider theme={currentTheme}>
       <FormProvider>
         <PedidoFormProvider>
           <VehicleFormProvider>
-            <SocketProvider> {/* Adicionado SocketProvider */}
+            <SocketProvider>
               <Routes>
                 <Route path="auth/*" element={<AuthLayout />} />
+                
+                {/* Rotas do Admin */}
                 <Route
                   path="admin/*"
                   element={
@@ -33,6 +35,8 @@ export default function Main() {
                     </PrivateRoute>
                   }
                 />
+
+                {/* RTL */}
                 <Route
                   path="rtl/*"
                   element={
@@ -41,8 +45,8 @@ export default function Main() {
                     </PrivateRoute>
                   }
                 />
+
                 <Route path="/" element={<Navigate to="/admin/default" replace />} />
-                {/* Rota para lidar com páginas não encontradas */}
                 <Route path="*" element={<Navigate to="/auth/login" replace />} />
               </Routes>
             </SocketProvider>

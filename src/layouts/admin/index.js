@@ -8,137 +8,91 @@ import routes from '../../routes';
 
 export default function Dashboard(props) {
   const { ...rest } = props;
-  // states and functions
   const fixed = true;
+  const { onOpen } = useDisclosure();
 
-  // functions for changing the states from components
-  const getRoute = () => {
-    return window.location.pathname !== '/admin/full-screen-maps';
+  /**
+   * Retorna a rota ativa atual com base no pathname
+   */
+  const getActiveRoute = () => {
+    const activeRoute = routes.find(
+      (route) =>
+        window.location.pathname === route.layout + route.path
+    );
+    return activeRoute ? activeRoute.name : 'Dashboard';
   };
 
-  const getActiveRoute = (routes) => {
-    let activeRoute = 'Default Brand Text';
-    for (let i = 0; i < routes.length; i++) {
-      if (routes[i].collapse) {
-        let collapseActiveRoute = getActiveRoute(routes[i].items);
-        if (collapseActiveRoute !== activeRoute) {
-          return collapseActiveRoute;
-        }
-      } else if (routes[i].category) {
-        let categoryActiveRoute = getActiveRoute(routes[i].items);
-        if (categoryActiveRoute !== activeRoute) {
-          return categoryActiveRoute;
-        }
-      } else {
-        if (
-          window.location.href.indexOf(routes[i].layout + routes[i].path) !== -1
-        ) {
-          return routes[i].name;
-        }
-      }
-    }
-    return activeRoute;
+  /**
+   * Verifica se a navbar secundária deve ser exibida
+   */
+  const getActiveNavbar = () => {
+    const activeRoute = routes.find(
+      (route) =>
+        window.location.pathname === route.layout + route.path
+    );
+    return activeRoute ? activeRoute.secondary : false;
   };
 
-  const getActiveNavbar = (routes) => {
-    let activeNavbar = false;
-    for (let i = 0; i < routes.length; i++) {
-      if (routes[i].collapse) {
-        let collapseActiveNavbar = getActiveNavbar(routes[i].items);
-        if (collapseActiveNavbar !== activeNavbar) {
-          return collapseActiveNavbar;
-        }
-      } else if (routes[i].category) {
-        let categoryActiveNavbar = getActiveNavbar(routes[i].items);
-        if (categoryActiveNavbar !== activeNavbar) {
-          return categoryActiveNavbar;
-        }
-      } else {
-        if (
-          window.location.href.indexOf(routes[i].layout + routes[i].path) !== -1
-        ) {
-          return routes[i].secondary;
-        }
-      }
-    }
-    return activeNavbar;
+  /**
+   * Texto da navbar secundária
+   */
+  const getActiveNavbarText = () => {
+    const activeRoute = routes.find(
+      (route) =>
+        window.location.pathname === route.layout + route.path
+    );
+    return activeRoute ? activeRoute.messageNavbar : '';
   };
 
-  const getActiveNavbarText = (routes) => {
-    let activeNavbar = false;
-    for (let i = 0; i < routes.length; i++) {
-      if (routes[i].collapse) {
-        let collapseActiveNavbar = getActiveNavbarText(routes[i].items);
-        if (collapseActiveNavbar !== activeNavbar) {
-          return collapseActiveNavbar;
-        }
-      } else if (routes[i].category) {
-        let categoryActiveNavbar = getActiveNavbarText(routes[i].items);
-        if (categoryActiveNavbar !== activeNavbar) {
-          return categoryActiveNavbar;
-        }
-      } else {
-        if (
-          window.location.href.indexOf(routes[i].layout + routes[i].path) !== -1
-        ) {
-          return routes[i].messageNavbar;
-        }
-      }
-    }
-    return activeNavbar;
-  };
-
+  /**
+   * Renderiza as rotas dinamicamente
+   */
   const getRoutes = (routes) => {
     return routes.map((route, key) => {
       if (route.layout === '/admin') {
         return (
-          <Route path={`${route.path}`} element={route.component} key={key} />
+          <Route
+            path={route.path}
+            element={route.component}
+            key={key}
+          />
         );
       }
-      if (route.collapse) {
-        return getRoutes(route.items);
-      } else {
-        return null;
-      }
+      return null;
     });
   };
 
-  document.documentElement.dir = 'ltr';
-  const { onOpen } = useDisclosure();
-
   return (
     <Box>
+      {/* Navbar fixa */}
       <Portal>
         <Box position="fixed" top="0" w="100%" zIndex="1000">
           <Navbar
             onOpen={onOpen}
-            logoText={'We Truck'}
-            brandText={getActiveRoute(routes)}
-            secondary={getActiveNavbar(routes)}
-            message={getActiveNavbarText(routes)}
+            logoText="We Truck"
+            brandText={getActiveRoute()}
+            secondary={getActiveNavbar()}
+            message={getActiveNavbarText()}
             fixed={fixed}
             {...rest}
           />
         </Box>
       </Portal>
 
-      {/* Conteúdo principal com padding-top ajustado */}
+      {/* Conteúdo Principal */}
       <Box
-        pt="80px" // Espaço para o navbar fixo (altura do navbar)
+        pt="80px" // Espaço para o navbar fixo
         px={{ base: '20px', md: '30px' }}
-        overflow="hidden" // Remove a rolagem
+        overflow="hidden"
       >
-        {getRoute() ? (
-          <Box mx="auto">
-            <Routes>
-              {getRoutes(routes)}
-              <Route
-                path="/"
-                element={<Navigate to="/admin/default" replace />}
-              />
-            </Routes>
-          </Box>
-        ) : null}
+        <Box mx="auto">
+          <Routes>
+            {getRoutes(routes)}
+            {/* Rota Padrão */}
+            <Route path="/" element={<Navigate to="/admin/default" replace />} />
+            <Route path="*" element={<Navigate to="/admin/default" replace />} />
+          </Routes>
+        </Box>
       </Box>
     </Box>
   );
