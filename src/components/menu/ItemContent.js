@@ -1,24 +1,17 @@
 // src/components/menu/ItemContent.js
 
-import React from "react";
-import {
-  Icon,
-  Flex,
-  Text,
-  useColorModeValue,
-  Box,
-  VStack,
-} from "@chakra-ui/react";
+import { Icon, Flex, Text, useColorModeValue, Box, VStack } from "@chakra-ui/react";
 import { MdLocalShipping, MdCheckCircle } from "react-icons/md";
-import PropTypes from "prop-types";
+import React from "react";
 import AcceptButton from "./AcceptButton";
+import PropTypes from "prop-types";
 
 // Função para formatar o endereço
-const formatAddress = (addressObj) => {
-  if (!addressObj) return "";
-  if (typeof addressObj === "string") return addressObj;
-  const { address, city, state, complement, postalCode } = addressObj;
-  return `${address}, ${complement ? complement + ", " : ""}${city}, ${state}, ${postalCode}`;
+const formatAddress = (address) => {
+  if (!address) return "";
+  if (typeof address === "string") return address;
+  const { address: addr, city, state, complement, postalCode } = address;
+  return `${addr}${complement ? ", " + complement : ""}, ${city} - ${state}, ${postalCode}`;
 };
 
 // Função para formatar a data de forma segura
@@ -27,125 +20,97 @@ const formatDate = (dateString) => {
   return isNaN(date.getTime()) ? "Data inválida" : date.toLocaleString();
 };
 
-export function ItemContent({ type, info, onAccept }) {
-  // Cores baseadas no modo de cor
-  const textColor = useColorModeValue("gray.700", "whiteAlpha.900");
-  const subTextColor = useColorModeValue("gray.600", "gray.400");
-  const bgColor = useColorModeValue("gray.50", "gray.700");
-  const hoverBgColor = useColorModeValue("gray.100", "gray.600");
+export function ItemContent({ type, info, onAccept, fetchNotifications }) {
+  const textColor = useColorModeValue("navy.700", "white");
+  const subTextColor = useColorModeValue("gray.600", "gray.300");
 
-  // Desestruturando os dados da notificação
-  const { origin, destination, name, time, id } = info; // 'id' agora está corretamente mapeado
+  let icon = MdLocalShipping;
+  let title = "Novo Frete Disponível";
+  let description = "Há um novo frete que corresponde aos seus critérios.";
 
-  // Configurações baseadas no tipo de notificação
-  const notificationConfig = {
-    default: {
-      icon: MdLocalShipping,
-      title: "Novo Frete",
-      description: "Você recebeu um novo frete.",
-      bgGradient: "linear(to-r, yellow.400, yellow.600)",
-      iconColor: "black", // Ícone preto
-    },
-    freteAceito: {
-      icon: MdCheckCircle,
-      title: "Frete Aceito",
-      description: "Seu frete foi aceito.",
-      bgGradient: "linear(to-r, green.400, green.600)",
-      iconColor: "white",
-    },
-    // Adicione outros tipos de notificações aqui, se necessário
-  };
+  if (type === "freteAceito") {
+    icon = MdCheckCircle;
+    title = "Frete Aceito";
+    description = "Seu pedido de frete foi aceito com sucesso!";
+  }
 
-  const { icon, title, description, bgGradient, iconColor } =
-    notificationConfig[type] || notificationConfig.default;
+  // Define a cor de fundo com base no tipo de notificação
+  const bgGradient = type === "freteAceito"
+    ? "linear(to-r, green.400, green.600)" // Verde para aceitação
+    : "linear(to-r, purple.400, purple.600)"; // Roxo para novo frete
+
+  // Extrai as informações da notificação
+  const { origin, destination, name, time, id } = info;
 
   return (
     <Flex
-      align="center"
-      p={{ base: "12px", md: "16px" }}
-      borderRadius="md"
-      bg={bgColor}
-      boxShadow="sm"
-      transition="background-color 0.2s ease-in-out"
-      _hover={{ bg: hoverBgColor }}
-      mb="8px"
-      role="group"
-      aria-label={`${title} - ${description}`}
-      flexDirection={{ base: "column", md: "row" }} // Layout responsivo
-      textAlign={{ base: "center", md: "left" }} // Alinhamento responsivo
-    >
-      {/* Ícone da Notificação */}
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        borderRadius="md"
-        minH="60px"
-        h="60px"
-        minW="60px"
-        w="60px"
-        mb={{ base: "8px", md: "0" }} // Margem responsiva
-        me={{ base: "0", md: "16px" }}
-        bg={bgGradient}
-        boxShadow="md"
-        aria-hidden="true"
-      >
-        <Icon
-          as={icon}
-          color={iconColor}
-          w={{ base: 6, md: 8 }}
-          h={{ base: 6, md: 8 }}
-        />
-      </Box>
-
-      {/* Conteúdo da Notificação */}
-      <VStack
-        align={{ base: "center", md: "start" }}
-        spacing={1}
-        flex="1"
-        width={{ base: "100%", md: "auto" }} // Responsividade na largura
-      >
-        <Text
-          fontWeight="600" // Mais espessura para legibilidade
-          color={textColor}
-          fontSize={{ base: "md", md: "lg" }}
-        >
-          {title}
-        </Text>
-        <Text
-          fontSize="sm"
-          lineHeight="short"
-          color={subTextColor}
-          fontWeight="500" // Mais espessura para legibilidade
-        >
-          {description}
-        </Text>
+      direction="column"
+      p="12px"
+      borderRadius="12px"
+      bg={useColorModeValue("gray.50", "gray.800")}
+      boxShadow="base"
+      transition="all 0.2s ease-in-out"
+      _hover={{ transform: "scale(1.02)" }}
+    > 
+      {/* Cabeçalho com ícone e título */}
+      <Flex align="center">
         <Box
-          as="section"
-          mt="2"
-          aria-label="Detalhes do Frete"
-          width="100%"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          borderRadius="full"
+          minH="60px"
+          h="60px"
+          minW="60px"
+          w="60px"
+          me="16px"
+          bg={bgGradient}
+          boxShadow="md"
         >
-          <Flex direction="column" gap={1}>
-            <Text fontSize="sm" color={subTextColor} fontWeight="500">
-              <strong>Origem:</strong> {formatAddress(origin)}
-            </Text>
-            <Text fontSize="sm" color={subTextColor} fontWeight="500">
-              <strong>Destino:</strong> {formatAddress(destination)}
-            </Text>
-            <Text fontSize="sm" color={subTextColor} fontWeight="500">
-              <strong>Motorista:</strong> {name}
-            </Text>
-            <Text fontSize="sm" color={subTextColor} fontWeight="500">
-              <strong>Horário:</strong> {formatDate(time)}
-            </Text>
-          </Flex>
+          <Icon as={icon} color="black" w={10} h={10} />
         </Box>
+        <Flex flexDirection="column">
+          <Text
+            mb="4px"
+            fontWeight="bold"
+            color={textColor}
+            fontSize="lg"
+          >
+            {title}
+          </Text>
+          <Text
+            fontSize="sm"
+            lineHeight="short"
+            color={useColorModeValue("gray.600", "gray.300")}
+          >
+            {description}
+          </Text>
+        </Flex>
+      </Flex>
+      
+      {/* Detalhes do frete com espaçamento adicionado */}
+      <VStack align="start" spacing={2} mt="12px">
+        <Text fontSize="sm" color={subTextColor}>
+          <strong>Origem:</strong> {formatAddress(origin)}
+        </Text>
+        <Text fontSize="sm" color={subTextColor}>
+          <strong>Destino:</strong> {formatAddress(destination)}
+        </Text>
+        <Text fontSize="sm" color={subTextColor}>
+          <strong>Motorista:</strong> {name}
+        </Text>
+        <Text fontSize="sm" color={subTextColor}>
+          <strong>Horário:</strong> {formatDate(time)}
+        </Text>
       </VStack>
-
-      {/* Botão de Aceitar em Todas as Notificações */}
-      <Box mt={{ base: "8px", md: "0" }} ml={{ base: "0", md: "auto" }}>
-        <AcceptButton notificationId={id} onAccept={onAccept} />
+      
+      {/* Botão Aceitar */}
+      <Box mt="12px">
+        <AcceptButton
+          notificationId={id}
+          onAccept={onAccept}
+          fetchNotifications={fetchNotifications}
+        />
       </Box>
     </Flex>
   );
@@ -155,7 +120,7 @@ export function ItemContent({ type, info, onAccept }) {
 ItemContent.propTypes = {
   type: PropTypes.string.isRequired,
   info: PropTypes.shape({
-    id: PropTypes.string.isRequired, // Atualizado para string devido à concatenação
+    id: PropTypes.string.isRequired,
     origin: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.shape({
@@ -177,7 +142,8 @@ ItemContent.propTypes = {
       }),
     ]).isRequired,
     name: PropTypes.string.isRequired,
-    time: PropTypes.string.isRequired, // Garantir que time é uma string
+    time: PropTypes.string.isRequired,
   }).isRequired,
   onAccept: PropTypes.func,
+  fetchNotifications: PropTypes.func, // Adicionado para re-fetch das notificações
 };

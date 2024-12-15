@@ -6,19 +6,14 @@ import {
   useToast,
   Tooltip,
   Spinner,
-  Icon,
   Text,
 } from "@chakra-ui/react";
-import { MdCheck } from "react-icons/md";
 import PropTypes from "prop-types";
 import axiosInstance from "../../axiosInstance";
 
-export default function AcceptButton({ notificationId, onAccept }) {
+export default function AcceptButton({ notificationId, onAccept, fetchNotifications }) {
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
-
-  // Adicionando log para verificar o notificationId
-  console.log("AcceptButton - notificationId:", notificationId);
 
   const handleAccept = async () => {
     if (!notificationId) {
@@ -33,10 +28,10 @@ export default function AcceptButton({ notificationId, onAccept }) {
     }
 
     setIsLoading(true);
-    console.log(`Enviando requisição para: /work/${notificationId}/accept`);
     try {
       const response = await axiosInstance.post(`/work/${notificationId}/accept`);
-      if (response.status === 200) {
+      
+      if (response.status >= 200 && response.status < 300) { // Considera qualquer status 2xx como sucesso
         toast({
           title: "Frete Aceito",
           description: "O frete foi aceito com sucesso.",
@@ -44,7 +39,8 @@ export default function AcceptButton({ notificationId, onAccept }) {
           duration: 5000,
           isClosable: true,
         });
-        if (onAccept) onAccept(notificationId);
+        if (onAccept) onAccept(notificationId); // Remove a notificação da lista local
+        if (fetchNotifications) fetchNotifications(); // Re-fetch as notificações do backend
       } else {
         throw new Error("Falha ao aceitar o frete.");
       }
@@ -70,27 +66,17 @@ export default function AcceptButton({ notificationId, onAccept }) {
         loadingText="Aceitando"
         variant="solid"
         colorScheme="green"
-        borderRadius="full" // Torna o botão totalmente redondo
-        size="sm" // Tamanho pequeno para manter a sutileza
-        p={4} // Padding para garantir um bom espaçamento interno
-        display="flex"
-        flexDirection="column" // Organiza o ícone e o texto verticalmente
-        alignItems="center"
-        justifyContent="center"
-        width="60px" // Define uma largura fixa para manter o formato circular
-        height="60px" // Define uma altura fixa para manter o formato circular
-        boxShadow="md"
-        _hover={{ bg: "green.600" }} // Aumenta a tonalidade no hover
+        borderRadius="md" // Bordas arredondadas suaves
+        size="md"
+        p={4}
+        width="100%" // Largura total
       >
         {isLoading ? (
           <Spinner size="sm" color="white" />
         ) : (
-          <>
-            <Icon as={MdCheck} w={6} h={6} color="white" />
-            <Text fontSize="xs" color="white" mt="1">
-              Aceitar
-            </Text>
-          </>
+          <Text fontSize="md" color="white">
+            Aceitar
+          </Text>
         )}
       </Button>
     </Tooltip>
@@ -98,6 +84,7 @@ export default function AcceptButton({ notificationId, onAccept }) {
 }
 
 AcceptButton.propTypes = {
-  notificationId: PropTypes.string.isRequired, // Atualizado para string
+  notificationId: PropTypes.string.isRequired,
   onAccept: PropTypes.func,
+  fetchNotifications: PropTypes.func, // Função para re-fetch das notificações
 };
