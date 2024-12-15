@@ -5,13 +5,10 @@ import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 import AdminNavbarLinks from './NavbarLinksAdmin';
 import UserProfileMenu from './UserProfileMenu';
-import { io } from 'socket.io-client'; // Importa o io do socket.io-client
-import axiosInstance from '../../axiosInstance'; // Importa a instância personalizada do Axios
-
-// Importa a logo
+import { io } from 'socket.io-client';
+import axiosInstance from '../../axiosInstance';
 import LogoWeTruck from '../../assets/images/logotruckpreto.png';
 
-// Função para decodificar o token JWT (opcional, para verificação adicional)
 function decodeJWT(token) {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -24,36 +21,31 @@ function decodeJWT(token) {
 
 export default function AdminNavbar(props) {
   const [scrolled, setScrolled] = useState(false);
-  const [notifications, setNotifications] = useState([]); // Estado para notificações
-  const toast = useToast(); // Hook do Chakra para toast notifications
+  const [notifications, setNotifications] = useState([]);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const toast = useToast();
 
+  // Efeito responsável por validação do token e conexão com socket
   useEffect(() => {
-    // Recupera o token de autenticação e user_id do localStorage
     const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('user_id');
 
-    console.log('Recuperando Token e User ID do localStorage:');
-    console.log('authToken:', token);
-    console.log('user_id:', userId);
-
-    // Verifique se o token e user_id existem
     if (!token || !userId) {
-      console.error('Token de autenticação ou user_id não encontrado!');
+      console.error('Token ou user_id não encontrado!');
       toast({
         title: 'Erro de Autenticação',
-        description: 'Token de autenticação ou user_id não encontrado. Por favor, faça login novamente.',
+        description: 'Por favor, faça login novamente.',
         status: 'error',
         duration: 5000,
         isClosable: true,
       });
-      // Redirecionar para a página de login
       window.location.href = '/login';
       return;
     }
 
     const decoded = decodeJWT(token);
     if (decoded) {
-      const currentTime = Math.floor(Date.now() / 1000); // Tempo atual em segundos
+      const currentTime = Math.floor(Date.now() / 1000);
       if (decoded.exp < currentTime) {
         console.error('Token expirado!');
         toast({
@@ -68,10 +60,9 @@ export default function AdminNavbar(props) {
       }
     }
 
-    // Converter user_id para número, se necessário
     const parsedUserId = parseInt(userId, 10);
     if (isNaN(parsedUserId)) {
-      console.error('user_id armazenado não é um número válido!');
+      console.error('user_id inválido!');
       toast({
         title: 'Erro de Usuário',
         description: 'Identificador do usuário não é válido. Por favor, faça login novamente.',
@@ -83,73 +74,65 @@ export default function AdminNavbar(props) {
       return;
     }
 
- 
-    const fetchNotifications = async () => {
-      try {
-        const response = await axiosInstance.get('/work/get-notifications' 
-          
-        );
-
-        if (response.data && Array.isArray(response.data.notifications)) {
-          setNotifications(response.data.notifications);
-          console.log('Notificações persistidas carregadas:', response.data.notifications);
-        } else {
-          console.warn('Formato de resposta inesperado:', response.data);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar notificações persistidas:', error);
-        toast({
-          title: 'Erro ao carregar notificações',
-          description: 'Não foi possível carregar as notificações. Tente novamente mais tarde.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    };
-
- 
-    fetchNotifications();
-
+    // Estabelecendo conexão com o WebSocket
     console.log('Estabelecendo conexão com o WebSocket...');
     const socket = io('https://etc.wetruckhub.com/orders/socket', {
-      auth: {
-        token: token, // Envia o token no campo 'ath'
-      },
-      query: { userId: parsedUserId }, // Envia o user_id via query string com a chave correta 'userId'
-      transports: ['websocket'], // Força a utilização do WebSocket
-      secure: true, // Se estiver usando HTTPS no backend
+      auth: { token: token },
+      query: { userId: parsedUserId },
+      transports: ['websocket'],
+      secure: true,
     });
 
-    // Evento de conexão
     socket.on('connect', () => {
       console.log('Conectado ao servidor!');
+      setSocketConnected(true);
       socket.emit('message', 'Olá, servidor!');
     });
 
-    // Evento para receber novas ordens
     socket.on('new_order', (data) => {
       console.log('Nova ordem recebida:', data);
-      setNotifications((prev) => [...prev, data]);
+      // Mapear 'orderId' para 'id' e 'userName' para 'name'
+      const notification = {
+        ...data,
+        id: data.orderId, // Mapeamento correto
+        name: data.name || data.userName,
+      };
+      setNotifications((prev) => [...prev, notification]);
 
-      // Exibir uma notificação toast
       toast({
         title: 'Nova Ordem',
-        description: `Você recebeu uma nova ordem de ${data.userName || 'um cliente'}.`,
+        description: `Você recebeu uma nova ordem de ${notification.name || 'um Motorista'}.`,
         status: 'info',
         duration: 5000,
         isClosable: true,
       });
     });
 
-    // Evento de desconexão
-    socket.on('disconnect', () => {
-      console.log('Desconectado do servidor!');
+    // Listener para 'accept_order'
+    socket.on('accept_order', (data) => {
+      console.log('Pedido aceito:', data);
+      const { orderId, clientName } = data; // Ajuste conforme o payload recebido
+
+      // Atualizar o estado das notificações removendo a que foi aceita
+      setNotifications((prev) => prev.filter((notification) => notification.id !== orderId));
+
+      toast({
+        title: 'Pedido Aceito',
+        description: `O pedido de ${clientName || 'um cliente'} foi aceito.`,
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      });
     });
 
-    // Evento de erro
+    socket.on('disconnect', () => {
+      console.log('Desconectado do servidor!');
+      setSocketConnected(false);
+    });
+
     socket.on('connect_error', (err) => {
       console.error('Erro de conexão:', err.message);
+      setSocketConnected(false);
       toast({
         title: 'Erro de Conexão',
         description: `Não foi possível conectar ao servidor: ${err.message}`,
@@ -159,13 +142,53 @@ export default function AdminNavbar(props) {
       });
     });
 
-    // Limpeza ao desmontar o componente
     return () => {
       socket.disconnect();
     };
-  }, [toast]); // Dependência de 'toast' para evitar avisos do ESLint
+  }, [toast]);
 
+  // Efeito para buscar notificações ao carregar a página
   useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axiosInstance.get('/work/get-notifications');
+        console.log('Resposta do backend:', response.data);
+
+        if (response.data && Array.isArray(response.data.data)) {
+          const formattedNotifications = response.data.data.map((notif) => ({
+            ...notif,
+            id: notif.orderId, // Mapeamento correto
+            name: notif.userName || notif.name,
+          }));
+          setNotifications(formattedNotifications);
+          console.log('Notificações carregadas:', formattedNotifications);
+        } else {
+          console.warn('Formato de resposta inesperado:', response.data);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar notificações:', error);
+        toast({
+          title: 'Erro ao carregar notificações',
+          description: 'Não foi possível carregar as notificações. Tente novamente mais tarde.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+    fetchNotifications();
+  }, [toast]);
+
+  // Efeito para mudar a navbar ao scroll
+  useEffect(() => {
+    const changeNavbar = () => {
+      if (window.scrollY > 1) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
     window.addEventListener('scroll', changeNavbar);
     return () => {
       window.removeEventListener('scroll', changeNavbar);
@@ -176,20 +199,10 @@ export default function AdminNavbar(props) {
 
   const navbarPosition = 'fixed';
   const navbarHeight = '80px';
-
-  const changeNavbar = () => {
-    if (window.scrollY > 1) {
-      setScrolled(true);
-    } else {
-      setScrolled(false);
-    }
-  };
-
-  // Efeito de blur na navbar
   const navbarBg = scrolled
-    ? 'rgba(255, 255, 255, 0.8)'
-    : 'rgba(255, 255, 255, 0.6)';
-  const backdropFilter = scrolled ? 'blur(10px)' : 'none';
+    ? 'rgba(255, 255, 255, 0.85)' // Reduzido o nível de opacidade para menor desfoque
+    : 'rgba(255, 255, 255, 0.65)';
+  const backdropFilter = scrolled ? 'blur(4px)' : 'none'; // Reduzido o desfoque
 
   return (
     <Box
@@ -209,7 +222,7 @@ export default function AdminNavbar(props) {
         h="100%"
         alignItems="center"
         justifyContent="space-between"
-        px={{ base: '10px', md: '30px' }}
+        px={{ base: '16px', md: '40px' }}
         flexDirection="row"
         position="relative"
       >
@@ -218,32 +231,32 @@ export default function AdminNavbar(props) {
           src={LogoWeTruck}
           alt="WeTruck Logo"
           height={{ base: '40px', md: '60px' }}
-          mr="20px" // Define um gap maior à direita da logo
+          mr="24px"
         />
 
-        {/* Foto de perfil para dispositivos móveis, ajustada */}
+        {/* Foto de perfil para dispositivos móveis */}
         <Flex
           position="absolute"
           left="50%"
-          transform="translateX(-40%)" // Ajusta a posição para mais à direita
+          transform="translateX(-50%)"
           display={{ base: 'flex', md: 'none' }}
           alignItems="center"
-          mt={{ base: '5px', md: '0' }}
-          ml="15px" // Adiciona um espaçamento à esquerda
+          mt={{ base: '0px', md: '0' }}
+          ml="0px"
         >
           <UserProfileMenu userName="Matheus" />
         </Flex>
 
-        {/* Layout responsivo da foto de perfil para desktop */}
-        <Flex alignItems="center" display={{ base: 'none', md: 'flex' }} ml="20px">
+        {/* Foto de perfil para desktop */}
+        <Flex alignItems="center" display={{ base: 'none', md: 'flex' }} ml="24px">
           <UserProfileMenu userName="Matheus" />
         </Flex>
 
-        {/* Links da Navbar, posicionados à direita */}
+        {/* Links da Navbar */}
         <Flex
           ml="auto"
           alignItems="center"
-          gap={{ base: '10px', md: '20px' }}
+          gap={{ base: '24px', md: '32px' }}
           flexDirection="row"
         >
           <AdminNavbarLinks
@@ -251,13 +264,18 @@ export default function AdminNavbar(props) {
             secondary={props.secondary}
             fixed={props.fixed}
             scrolled={scrolled}
-            notifications={notifications} // Passa as notificações como props
-            // socketConnected={socketConnected} // Removido
+            notifications={notifications}
+            socketConnected={socketConnected}
+            setNotifications={setNotifications} // Passando a função para atualizar notificações
           />
         </Flex>
       </Flex>
 
-      {secondary ? <Box color="white" mt="4">{message}</Box> : null}
+      {secondary && (
+        <Box color="gray.600" mt="4" textAlign="center">
+          {message}
+        </Box>
+      )}
     </Box>
   );
 }

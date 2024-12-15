@@ -18,11 +18,11 @@ import PropTypes from 'prop-types';
 import { ItemContent } from '../../components/menu/ItemContent';
 import LogoutButton from './LogoutButton';
 
-export default function NavbarLinksAdmin({ notifications = [], socketConnected }) {
-  const textColor = useColorModeValue('secondaryGray.900', 'white');
+export default function NavbarLinksAdmin({ notifications = [], socketConnected, setNotifications }) {
+  const textColor = useColorModeValue('gray.700', 'whiteAlpha.900');
   const shadow = useColorModeValue(
-    '14px 17px 40px 4px rgba(112, 144, 176, 0.18)',
-    '14px 17px 40px 4px rgba(112, 144, 176, 0.06)'
+    '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    '0px 4px 12px rgba(0, 0, 0, 0.2)'
   );
 
   const unreadCount = notifications.length;
@@ -31,8 +31,14 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected }
     console.log(`WebSocket está ${socketConnected ? 'conectado' : 'desconectado'}.`);
   };
 
+  // Função para remover a notificação aceita da lista
+  const handleAccept = (acceptedId) => {
+    setNotifications((prev) => prev.filter((notification) => notification.id !== acceptedId));
+  };
+
   return (
-    <Flex alignItems="center" gap="20px">
+    <Flex alignItems="center" gap="24px">
+      {/* Notificações */}
       <Menu>
         <MenuButton
           as={IconButton}
@@ -42,6 +48,7 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected }
           size="lg"
           position="relative"
           onClick={handleNotificationsClick}
+          _hover={{ bg: 'gray.100' }}
         >
           {unreadCount > 0 && (
             <Badge
@@ -59,42 +66,55 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected }
         </MenuButton>
         <MenuList
           boxShadow={shadow}
-          p="10px"
-          borderRadius="20px"
-          mt="22px"
-          width={{ base: '90vw', md: '400px' }}
-          maxH="400px"
+          p="12px"
+          borderRadius="lg"
+          mt="14px"
+          width={{ base: '90vw', md: '450px' }}
+          maxH="500px"
           overflowY="auto"
           bg={useColorModeValue('white', 'gray.800')}
         >
-          <Flex w="100%" mb="20px">
+          <Flex w="100%" mb="16px">
             <Text fontSize="md" fontWeight="600" color={textColor}>
               Notificações
             </Text>
           </Flex>
           <Flex flexDirection="column">
             {unreadCount === 0 ? (
-              <Text fontSize="sm" color="gray.500">
+              <Text fontSize="sm" color="gray.500" textAlign="center">
                 Nenhuma nova ordem.
               </Text>
             ) : (
-              notifications.slice(0, 4).map((notification, index) => (
+              notifications.map((notification) => (
                 <MenuItem
-                  key={index}
+                  key={notification.id}
                   _hover={{ bg: 'none' }}
                   px="0"
-                  borderRadius="8px"
-                  mb="10px"
+                  borderRadius="md"
+                  mb="12px"
+                  display="block"
                 >
-                  <ItemContent info={`Nova ordem de ${notification.userName || 'um cliente'}`} />
+                  <ItemContent
+                    type={notification.type}
+                    info={notification}
+                    onAccept={handleAccept}
+                  />
                 </MenuItem>
               ))
             )}
             {unreadCount > 4 && (
               <>
-                <Divider />
-                <MenuItem as="a" href="/notifications" justifyContent="center">
-                  Ver mais
+                <Divider mb="12px" />
+                <MenuItem
+                  as="a"
+                  href="/notifications"
+                  justifyContent="center"
+                  _hover={{ bg: 'gray.100', textDecoration: 'none' }}
+                  borderRadius="md"
+                >
+                  <Text fontSize="sm" color="blue.500" fontWeight="medium">
+                    Ver mais
+                  </Text>
                 </MenuItem>
               </>
             )}
@@ -102,6 +122,7 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected }
         </MenuList>
       </Menu>
 
+      {/* Informações e Configurações */}
       <Menu>
         <MenuButton
           as={IconButton}
@@ -110,27 +131,29 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected }
           icon={<MdInfoOutline />}
           variant="ghost"
           size="lg"
+          _hover={{ bg: 'gray.100' }}
         />
         <MenuList
           boxShadow={shadow}
-          p="20px"
-          borderRadius="20px"
-          mt="22px"
+          p="16px"
+          borderRadius="lg"
+          mt="14px"
           bg={useColorModeValue('white', 'gray.800')}
         >
-          <Flex flexDirection="column" p="10px">
+          <Flex flexDirection="column" p="8px">
             <MenuItem
-              _hover={{ bg: 'none' }}
-              borderRadius="8px"
-              px="14px"
+              _hover={{ bg: 'gray.100', color: 'blue.500' }}
+              borderRadius="md"
+              px="12px"
             >
-              <Text fontSize="sm">Configurações do Perfil</Text>
+              <Text fontSize="sm" color={useColorModeValue('gray.700', 'whiteAlpha.900')}>
+                Configurações do Perfil
+              </Text>
             </MenuItem>
             <MenuItem
-              _hover={{ bg: 'none' }}
-              color="red.400"
-              borderRadius="8px"
-              px="14px"
+              _hover={{ bg: 'red.100', color: 'red.500' }}
+              borderRadius="md"
+              px="12px"
             >
               <LogoutButton />
             </MenuItem>
@@ -142,6 +165,7 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected }
 }
 
 NavbarLinksAdmin.propTypes = {
-  notifications: PropTypes.array,
-  socketConnected: PropTypes.bool,
+  notifications: PropTypes.array.isRequired,
+  socketConnected: PropTypes.bool.isRequired,
+  setNotifications: PropTypes.func.isRequired, // Adicionado para atualizar as notificações
 };
