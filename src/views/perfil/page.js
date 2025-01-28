@@ -15,7 +15,7 @@ import {
   Grid,
   FormControl,
   FormLabel,
-  Flex, // Importação do Flex
+  Flex,
 } from '@chakra-ui/react';
 import { useDropzone } from 'react-dropzone';
 import { FaCamera } from 'react-icons/fa';
@@ -42,76 +42,87 @@ export default function Profile() {
   const [imageProfile, setImageProfile] = useState(null);
   const [imageDocument, setImageDocument] = useState(null);
 
-  const bg = 'white'; // Definindo fundo branco
+  const [profileImagePreview, setProfileImagePreview] = useState('https://via.placeholder.com/300');
+  const [documentImagePreview, setDocumentImagePreview] = useState('https://via.placeholder.com/300');
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  const bg = 'white'; 
   const textColor = useColorModeValue('gray.700', 'whiteAlpha.900');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const toast = useToast();
 
-  // Máscara de CPF
-  const handleCPFChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  // Log do estado profile para depuração
+  useEffect(() => {
+    console.log('Profile state:', profile);
+  }, [profile]);
 
+  // Função para formatar o CPF enquanto o usuário digita
+  const handleCPFChange = (e) => {
+    let value = e.target.value.replace(/[^\d.-]/g, ''); // Permite apenas números, pontos e hífen
+    value = value.slice(0, 14); // Limita a 14 caracteres (com formatação)
     setProfile((prev) => ({
       ...prev,
-      driverDocument: {
-        ...prev.driverDocument,
-        cpf: value,
-      },
+      driverDocument: { ...prev.driverDocument, cpf: value },
     }));
   };
 
-  // Dropzones
+  // Configuração dos dropzones
   const onDropProfile = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file) setImageProfile(file);
   };
-
   const onDropDocument = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (file) setImageDocument(file);
   };
 
-  const { getRootProps: getProfileRootProps, getInputProps: getProfileInputProps } = useDropzone({
+  // Usando a lib react-dropzone
+  const {
+    getRootProps: getProfileRootProps,
+    getInputProps: getProfileInputProps,
+  } = useDropzone({
     onDrop: onDropProfile,
     accept: 'image/*',
   });
-  const { getRootProps: getDocumentRootProps, getInputProps: getDocumentInputProps } = useDropzone({
+  const {
+    getRootProps: getDocumentRootProps,
+    getInputProps: getDocumentInputProps,
+  } = useDropzone({
     onDrop: onDropDocument,
     accept: 'image/*',
   });
 
+  // Carrega os dados de perfil (GET /profile) quando o componente monta
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const userId = localStorage.getItem('user_id');
-        if (!userId) {
-          console.error('Usuário não autenticado. Redirecionando para login.');
-          window.location.href = '/auth/login';
-          return;
-        }
-        const response = await axiosInstance.get(`/profile/${userId}`);
+        const response = await axiosInstance.get('/profile');
+        const data = response.data.data;
 
-        setProfile((prev) => ({
-          ...prev,
-          firstName: response.data.firstName || '',
-          lastName: response.data.lastName || '',
-          gender: response.data.gender || '',
-          email: response.data.email || '',
-          driverDocument: {
-            driverLicenseNumber: response.data.driverLicenseNumber || '',
-            dateOfIssue: response.data.dateOfIssue || '',
-            expirationDate: response.data.expirationDate || '',
-            issuingState: response.data.issuingState || '',
-            cpf: response.data.cpf || '',
-            category: response.data.category || '',
-          },
-          imageProfileUrl: response.data.imageProfileUrl || '',
-          imageDocumentUrl: response.data.imageDocumentUrl || '',
-        }));
+        if (data) {
+          setProfile((prev) => ({
+            ...prev,
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            gender: data.gender || '',
+            email: data.email || '',
+            driverDocument: {
+              driverLicenseNumber: data.driverDocument?.driverLicenseNumber || '',
+              dateOfIssue: data.driverDocument?.dateOfIssue || '',
+              expirationDate: data.driverDocument?.expirationDate || '',
+              issuingState: data.driverDocument?.issuingState || '',
+              cpf: data.driverDocument?.cpf || '',
+              category: data.driverDocument?.category || '',
+            },
+            imageProfileUrl: data.profileImageUrl || '',
+            imageDocumentUrl: data.driverDocument?.scanUrl || '',
+          }));
+        }
+
+        setIsLoading(false);
       } catch (error) {
+        console.error('Erro ao carregar perfil:', error);
         toast({
           title: 'Erro ao carregar perfil',
           description: error.response?.data?.message || error.message,
@@ -119,38 +130,101 @@ export default function Profile() {
           duration: 5000,
           isClosable: true,
         });
+        setIsLoading(false);
+        // Resetar o perfil para valores padrão em caso de erro
+        setProfile({
+          firstName: '',
+          lastName: '',
+          gender: '',
+          email: '',
+          driverDocument: {
+            driverLicenseNumber: '',
+            dateOfIssue: '',
+            expirationDate: '',
+            issuingState: '',
+            cpf: '',
+            category: '',
+          },
+          imageProfileUrl: '',
+          imageDocumentUrl: '',
+        });
       }
     };
     fetchProfile();
   }, [toast]);
 
-  // Preview local ou do backend
-  const profileImagePreview = imageProfile
-    ? URL.createObjectURL(imageProfile)
-    : profile.imageProfileUrl || 'https://via.placeholder.com/300';
+  // Atualiza a pré-visualização da imagem de perfil
+  useEffect(() => {
+    if (imageProfile) {
+      const objectUrl = URL.createObjectURL(imageProfile);
+      setProfileImagePreview(objectUrl);
 
-  const documentImagePreview = imageDocument
-    ? URL.createObjectURL(imageDocument)
-    : profile.imageDocumentUrl || 'https://via.placeholder.com/300';
+      // Limpa a URL anterior quando o componente desmonta ou a imagem muda
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setProfileImagePreview(profile.imageProfileUrl || 'https://via.placeholder.com/300');
+    }
+  }, [imageProfile, profile.imageProfileUrl]);
 
-  // Envio ao clicar em "Salvar Alterações"
+  // Atualiza a pré-visualização do documento
+  useEffect(() => {
+    if (imageDocument) {
+      const objectUrl = URL.createObjectURL(imageDocument);
+      setDocumentImagePreview(objectUrl);
+
+      // Limpa a URL anterior quando o componente desmonta ou a imagem muda
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setDocumentImagePreview(profile.imageDocumentUrl || 'https://via.placeholder.com/300');
+    }
+  }, [imageDocument, profile.imageDocumentUrl]);
+
+  // Atualiza o perfil ao clicar em "Salvar"
   const handleUpdateProfile = async () => {
     try {
       const formData = new FormData();
+
+      // Adiciona campos simples
       formData.append('firstName', profile.firstName);
       formData.append('lastName', profile.lastName);
       formData.append('gender', profile.gender);
       formData.append('email', profile.email);
-      formData.append('driverDocument', JSON.stringify(profile.driverDocument));
 
-      // Envia imageProfile e imageDocument mesmo se vazios (back-end não quebra)
-      if (imageProfile) formData.append('imageProfile', imageProfile);
-      else formData.append('imageProfile', '');
+      // Processa o CPF para remover formatação (pontos e hífen)
+      const cpfRaw = profile.driverDocument.cpf.replace(/\D/g, ''); // Remove todos os não-dígitos
 
-      if (imageDocument) formData.append('imageDocument', imageDocument);
-      else formData.append('imageDocument', '');
+      // Cria um novo objeto driverDocument com o CPF processado
+      const driverDocumentProcessed = {
+        ...profile.driverDocument,
+        cpf: cpfRaw,
+      };
 
-      await axiosInstance.put('/profile/update', formData);
+      // Adiciona o driverDocument como JSON
+      formData.append('driverDocument', JSON.stringify(driverDocumentProcessed));
+
+      // Só adiciona arquivos se existirem
+      if (imageProfile) {
+        formData.append('imageProfile', imageProfile, imageProfile.name || 'profile.jpg');
+      }
+      if (imageDocument) {
+        formData.append('imageDocument', imageDocument, imageDocument.name || 'document.jpg');
+      }
+
+      // Log dos dados que serão enviados
+      console.log('Dados enviados ao backend:', {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        gender: profile.gender,
+        email: profile.email,
+        driverDocument: driverDocumentProcessed,
+      });
+
+      // Faz a requisição PUT para atualizar o perfil
+      await axiosInstance.put('/profile/update', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       toast({
         title: 'Perfil atualizado com sucesso',
@@ -170,38 +244,56 @@ export default function Profile() {
     }
   };
 
+  // Exibir mensagem de carregamento enquanto os dados do perfil estão sendo carregados
+  if (isLoading) {
+    return (
+      <Flex
+        minHeight="100vh"
+        align="center"
+        justify="center"
+        bg="white"
+        p={4}
+      >
+        <Text>Carregando perfil...</Text>
+      </Flex>
+    );
+  }
+
   return (
-    // Contêiner Flex para centralizar o conteúdo
+    // Container flex para centralizar
     <Flex
       minHeight="100vh"
       align="center"
       justify="center"
-      bg="white" // Definindo fundo branco
+      bg="white"
       p={4}
     >
       <Box
-        bg={bg} // Fundo branco
-        maxW="800px" // Reduzido para 800px para evitar espaços brancos excessivos
+        bg={bg}
+        maxW="800px"
         w="100%"
         p={{ base: 4, md: 8 }}
         borderRadius="lg"
         boxShadow="lg"
       >
-        <Text fontSize="2xl" fontWeight="bold" color={textColor} mb={6} textAlign="center">
+        <Text
+          fontSize="2xl"
+          fontWeight="bold"
+          color={textColor}
+          mb={6}
+          textAlign="center"
+        >
           Perfil do Usuário
         </Text>
 
-        {/*
-          Grid responsivo: 1 coluna no mobile, 2 no desktop
-        */}
         <Grid
           templateColumns={{ base: '1fr', md: '300px 1fr' }}
           gap={8}
-          alignItems={{ base: 'center', md: 'start' }} // Centraliza no mobile
-          justifyContent={{ base: 'center', md: 'flex-end' }} // Centraliza no mobile e alinha à direita no desktop
+          alignItems={{ base: 'center', md: 'start' }}
+          justifyContent={{ base: 'center', md: 'flex-end' }}
         >
           {/* Foto do perfil + Documento à esquerda */}
-          <Box textAlign={{ base: 'center', md: 'center' }}> {/* Centraliza texto no mobile */}
+          <Box textAlign={{ base: 'center', md: 'center' }}>
             {/* Avatar / Foto de perfil */}
             <Box
               position="relative"
@@ -213,8 +305,8 @@ export default function Profile() {
             >
               <input {...getProfileInputProps()} />
               <Avatar
-                name={profile.firstName}
-                src={profileImagePreview}
+                name={profile?.firstName || 'Usuário'}
+                src={profileImagePreview || 'https://via.placeholder.com/300'}
                 width="300px"
                 height="300px"
                 borderRadius="md"
@@ -234,7 +326,7 @@ export default function Profile() {
               </Box>
             </Box>
 
-            {/* Documento menor */}
+            {/* Documento (pequeno preview) */}
             <VStack
               spacing={4}
               border="2px dashed"
@@ -247,7 +339,7 @@ export default function Profile() {
             >
               <input {...getDocumentInputProps()} />
               <Image
-                src={documentImagePreview}
+                src={documentImagePreview || 'https://via.placeholder.com/80'}
                 alt="Documento"
                 boxSize="80px"
                 objectFit="cover"
@@ -259,10 +351,10 @@ export default function Profile() {
             </VStack>
           </Box>
 
-          {/* Campos à direita */}
+          {/* Campos de texto à direita */}
           <VStack
             spacing={4}
-            align={{ base: 'center', md: 'start' }} // Alinha centralizado no mobile e à esquerda no desktop
+            align={{ base: 'center', md: 'start' }}
             w={{ base: '100%', md: 'auto' }}
           >
             {/* Nome */}
@@ -271,13 +363,15 @@ export default function Profile() {
                 Nome:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
                 focusBorderColor="orange.400"
                 value={profile.firstName}
-                onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, firstName: e.target.value })
+                }
                 placeholder="Primeiro Nome"
               />
             </FormControl>
@@ -288,30 +382,34 @@ export default function Profile() {
                 Sobrenome:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
                 focusBorderColor="orange.400"
                 value={profile.lastName}
-                onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, lastName: e.target.value })
+                }
                 placeholder="Sobrenome"
               />
             </FormControl>
 
-            {/* Gênero (Select) */}
+            {/* Gênero */}
             <FormControl id="gender">
               <FormLabel fontSize="sm" fontWeight="medium" color="gray.500">
                 Gênero:
               </FormLabel>
               <Select
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
                 focusBorderColor="orange.400"
                 value={profile.gender}
-                onChange={(e) => setProfile({ ...profile, gender: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, gender: e.target.value })
+                }
                 placeholder="Selecione o gênero"
               >
                 <option value="M">Masculino</option>
@@ -325,13 +423,15 @@ export default function Profile() {
                 Email:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
                 focusBorderColor="orange.400"
                 value={profile.email}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                onChange={(e) =>
+                  setProfile({ ...profile, email: e.target.value })
+                }
                 placeholder="Email"
               />
             </FormControl>
@@ -342,7 +442,7 @@ export default function Profile() {
                 CPF:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
@@ -353,13 +453,13 @@ export default function Profile() {
               />
             </FormControl>
 
-            {/* Número CNH */}
+            {/* Número da CNH */}
             <FormControl id="driverLicenseNumber">
               <FormLabel fontSize="sm" fontWeight="medium" color="gray.500">
                 Número CNH:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
@@ -384,7 +484,7 @@ export default function Profile() {
                 Data de Emissão:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
@@ -409,7 +509,7 @@ export default function Profile() {
                 Data de Expiração:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
@@ -434,7 +534,7 @@ export default function Profile() {
                 Estado Emissor:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
@@ -459,7 +559,7 @@ export default function Profile() {
                 Categoria:
               </FormLabel>
               <Input
-                w={{ base: '100%', md: '360px' }} // Responsivo
+                w={{ base: '100%', md: '360px' }}
                 size="sm"
                 borderRadius="md"
                 variant="filled"
@@ -482,7 +582,7 @@ export default function Profile() {
             <Button
               colorScheme="orange"
               onClick={handleUpdateProfile}
-              w={{ base: '100%', md: '360px' }} // Responsivo
+              w={{ base: '100%', md: '360px' }}
             >
               Salvar Alterações
             </Button>
