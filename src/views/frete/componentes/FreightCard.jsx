@@ -1,48 +1,42 @@
-// src/components/FreightCard.jsx
-
 import React from 'react';
-import {
-  Box,
-  Text,
-  Image,
-} from "@chakra-ui/react";
+import { Box, Image, Text } from '@chakra-ui/react';
 
-const FreightCard = ({ image, alt, title, onClick }) => {
+const FreightCard = ({ image, alt, title, categoria, subcategoria, onSelect }) => {
   return (
     <Box
-      onClick={onClick}
-      width={{ base: "130px", md: "160px", lg: "200px" }}
-      height={{ base: "180px", md: "220px", lg: "260px" }}
-      borderRadius="lg"
-      boxShadow="md"
+      onClick={() => onSelect(categoria, subcategoria)}
+      width={{ base: '360px', md: '240px', lg: '216px' }}
+      minHeight={{ base: 'auto', md: '290px', lg: '261px' }}
       bg="white"
+      boxShadow="md"
+      borderRadius="lg"
       p={4}
+      cursor="pointer"
+      transition="all 0.3s"
       display="flex"
-      flexDirection="column"
+      flexDirection={{ base: 'row', lg: 'column' }}
       alignItems="center"
       justifyContent="center"
-      transition="all 0.3s"
-      cursor="pointer"
       _hover={{
-        transform: "scale(1.05)",
-        boxShadow: "xl",
-        bg: "gray.50",
+        transform: 'scale(1.05)',
+        boxShadow: 'xl',
+        bg: 'gray.50',
       }}
     >
       <Image
         src={image}
         alt={alt}
-        boxSize={{ base: "70px", md: "100px", lg: "120px" }}
-        mb={3}
+        boxSize={{ base: '80px', md: '100px', lg: '60px' }}
+        mr={{ base: 3, lg: 0 }}
+        mb={{ base: 0, lg: 3 }}
       />
       <Text
         fontWeight="bold"
         color="gray.700"
-        fontSize={{ base: "sm", md: "md", lg: "lg" }}
-        textAlign="center"
+        fontSize={{ base: 'md', md: 'lg', lg: 'xl' }}
+        textAlign={{ base: 'left', lg: 'center' }}
         whiteSpace="normal"
-        wordBreak="break-word"
-        maxW="100%"
+        wordWrap="break-word"
       >
         {title}
       </Text>

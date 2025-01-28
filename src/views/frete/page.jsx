@@ -1,12 +1,9 @@
-// src/views/frete/page.jsx
-
 import React, { useEffect, useState, useContext } from 'react';
 import {
   Box,
   Spinner,
   Center,
   Text,
-  Image,
   VStack,
   Grid,
   GridItem,
@@ -17,65 +14,57 @@ import { ArrowBackIcon } from "@chakra-ui/icons";
 import { useNavigate } from 'react-router-dom';
 import { FormContext } from '../../contexts/FormContext';
 
-// Importação das imagens
+// Importante: Instale framer-motion e importe
+import { motion } from 'framer-motion';
+
+import "./FreightSelection.css";
+
+// Imagens (exemplo)
 import residentialTruck from '../../assets/images/residentialTruck.png';
 import commercialTruck from '../../assets/images/commercialTruck.png';
 import heavyLoad from '../../assets/images/heavyLoad.png';
 import refrigeratedTruck from '../../assets/images/refrigeratedTruck.png';
 import specialTruck from '../../assets/images/specialTruck.png';
 
-// Importar o mapeamento de frete para eixos e subcategorias
-import { categoryToSubcategories, freightToAxes } from '../../utils/freightMapping';
+// Seu componente de card
+import FreightCard from './componentes/FreightCard';
 
-// Componente reutilizável para os cards com navegação e atualização do formData
-const FreightCard = ({ image, alt, title, categoria, subcategoria, onSelect }) => {
-  return (
-    <Box
-      onClick={() => onSelect(categoria, subcategoria)}
-      width={{ base: "130px", md: "160px", lg: "200px" }}
-      height={{ base: "180px", md: "220px", lg: "260px" }}
-      borderRadius="lg"
-      boxShadow="md"
-      bg="white"
-      p={4}
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      transition="all 0.3s"
-      cursor="pointer"
-      _hover={{
-        transform: "scale(1.05)",
-        boxShadow: "xl",
-        bg: "gray.50",
-      }}
-    >
-      <Image
-        src={image}
-        alt={alt}
-        boxSize={{ base: "70px", md: "100px", lg: "120px" }}
-        mb={3}
-      />
-      <Text
-        fontWeight="bold"
-        color="gray.700"
-        fontSize={{ base: "sm", md: "md", lg: "lg" }}
-        textAlign="center"
-        whiteSpace="normal"
-        wordBreak="break-word"
-        maxW="100%"
-      >
-        {title}
-      </Text>
-    </Box>
-  );
-};
+// Mapeamento (seu código)
+import { freightToAxes } from '../../utils/freightMapping';
 
 export default function FreightSelection() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const navigate = useNavigate();
   const { updateFormData } = useContext(FormContext);
   const toast = useToast();
+
+  // Variants para o container (Grid). Vamos chamar de containerVariants.
+  const containerVariants = {
+    hidden: {
+      // estado inicial, pode ser vazio se só quiser staggers
+    },
+    show: {
+      transition: {
+        // anima os filhos (items) com um pequeno atraso um após o outro
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  // Variants para cada item (cada card). Chamamos de itemVariants.
+  const itemVariants = {
+    hidden: {
+      opacity: 0,
+      y: 30,
+    },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5, // tempo da animação de cada card
+      },
+    },
+  };
 
   useEffect(() => {
     const checkAuthentication = () => {
@@ -86,18 +75,15 @@ export default function FreightSelection() {
         setIsAuthenticated(false);
       }
     };
-
     checkAuthentication();
   }, []);
 
-  // Redireciona para a página de login se não estiver autenticado
   useEffect(() => {
     if (isAuthenticated === false) {
       navigate('/auth/login');
     }
   }, [isAuthenticated, navigate]);
 
-  // Estado de carregamento ou verificação em progresso
   if (isAuthenticated === null) {
     return (
       <Center height="100vh" bg="white">
@@ -106,9 +92,7 @@ export default function FreightSelection() {
     );
   }
 
-  // Função para lidar com a seleção do frete
   const handleSelectFreight = (categoria, subcategoria) => {
-    // Mapeamento dos IDs
     const categoriaParaId = {
       'Frete Residencial': 1,
       'Frete Comercial': 2,
@@ -129,7 +113,6 @@ export default function FreightSelection() {
       'Perigosa (granel sólido)': 9,
       'Perigosa (granel líquido)': 10,
       'Perigosa (conteinerizada)': 11,
-      // Adicione outras subcategorias conforme necessário
     };
 
     const classTypeId = categoriaParaId[categoria];
@@ -146,14 +129,9 @@ export default function FreightSelection() {
       return;
     }
 
-    // Atualiza o FormContext com a categoria, subcategoria e IDs selecionados
     updateFormData({ categoria, subcategoria, classTypeId, vehicleTypeId });
-
-    // Armazena os eixos permitidos com base no tipo de frete selecionado
     const allowedAxes = freightToAxes[categoria] || [];
     updateFormData({ allowedAxes });
-
-    // Navega para a próxima etapa
     navigate('/admin/dadoscarga');
   };
 
@@ -162,13 +140,10 @@ export default function FreightSelection() {
       width="100%"
       bg="white"
       p={4}
-      pt="0"
-      pb="0"
-      overflow="hidden"
       display="flex"
       alignItems="center"
       justifyContent="center"
-      minHeight="100vh"
+      mt={{ base: 0, lg: 20 }}
     >
       <VStack
         spacing={4}
@@ -176,11 +151,9 @@ export default function FreightSelection() {
         align="center"
         textAlign="center"
         width="100%"
-        mt={{ base: "0", md: "-100px", lg: "-160px" }}
-        mb="0"
       >
         {/* Botão de Voltar */}
-        <Box alignSelf="flex-start" mb={-2}>
+        <Box alignSelf="flex-start">
           <IconButton
             icon={<ArrowBackIcon />}
             onClick={() => navigate(-1)}
@@ -207,69 +180,87 @@ export default function FreightSelection() {
           </Text>
         </Text>
 
-        {/* Grid de opções de frete */}
-        <Grid
-          templateColumns={{ base: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }}
-          gap={4}
-          mt={4}
-          width="100%"
-          justifyItems="center"
+        {/* 
+          Animação:
+          - Envolvemos o Grid em um container motion.div para aplicar "containerVariants"
+          - O Grid em si pode ser "as={motion.div}" ou podemos envolver em <motion.div>.
+        */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          style={{ width: '100%' }} // garante que use a largura total
         >
-          <GridItem>
-            <FreightCard
-              image={residentialTruck}
-              alt="Frete Residencial"
-              title="Frete Residencial"
-              categoria="Frete Residencial"
-              subcategoria="Carga Geral"
-              onSelect={handleSelectFreight}
-            />
-          </GridItem>
+          <Grid
+            templateColumns={{
+              base: '1fr',
+              md: 'repeat(3, auto)',
+              lg: 'repeat(5, auto)',
+            }}
+            gap={{ base: 2, md: 4 }}
+            justifyContent="center"
+            width="100%"
+          >
+            {/* Cada GridItem será um item animado */}
+            <GridItem
+              as={motion.div}
+              variants={itemVariants} // Aplica animação a este item
+            >
+              <FreightCard
+                image={residentialTruck}
+                alt="Frete Residencial"
+                title="Frete Residencial"
+                categoria="Frete Residencial"
+                subcategoria="Carga Geral"
+                onSelect={handleSelectFreight}
+              />
+            </GridItem>
 
-          <GridItem>
-            <FreightCard
-              image={commercialTruck}
-              alt="Frete Comercial"
-              title="Frete Comercial"
-              categoria="Frete Comercial"
-              subcategoria="Conteinerizada"
-              onSelect={handleSelectFreight}
-            />
-          </GridItem>
+            <GridItem as={motion.div} variants={itemVariants}>
+              <FreightCard
+                image={commercialTruck}
+                alt="Frete Comercial"
+                title="Frete Comercial"
+                categoria="Frete Comercial"
+                subcategoria="Conteinerizada"
+                onSelect={handleSelectFreight}
+              />
+            </GridItem>
 
-          <GridItem>
-            <FreightCard
-              image={heavyLoad}
-              alt="Frete Cargas Pesadas"
-              title="Frete Cargas Pesadas"
-              categoria="Frete Cargas Pesadas"
-              subcategoria="Granel Sólido"
-              onSelect={handleSelectFreight}
-            />
-          </GridItem>
+            <GridItem as={motion.div} variants={itemVariants}>
+              <FreightCard
+                image={heavyLoad}
+                alt="Frete Cargas Pesadas"
+                title="Frete Cargas Pesadas"
+                categoria="Frete Cargas Pesadas"
+                subcategoria="Granel Sólido"
+                onSelect={handleSelectFreight}
+              />
+            </GridItem>
 
-          <GridItem>
-            <FreightCard
-              image={refrigeratedTruck}
-              alt="Frete Refrigerado"
-              title="Frete Refrigerado ou Congelado"
-              categoria="Frete Refrigerado, Congelado ou Aquecido"
-              subcategoria="Frigorificada ou Aquecida"
-              onSelect={handleSelectFreight}
-            />
-          </GridItem>
+            <GridItem as={motion.div} variants={itemVariants}>
+              <FreightCard
+                image={refrigeratedTruck}
+                alt="Frete Refrigerado"
+                title="Frete Refrigerado ou Congelado"
+                categoria="Frete Refrigerado, Congelado ou Aquecido"
+                subcategoria="Frigorificada ou Aquecida"
+                onSelect={handleSelectFreight}
+              />
+            </GridItem>
 
-          <GridItem>
-            <FreightCard
-              image={specialTruck}
-              alt="Frete Cargas Especiais"
-              title="Frete Cargas Especiais"
-              categoria="Frete Cargas Especiais"
-              subcategoria="Perigosa (granel sólido)"
-              onSelect={handleSelectFreight}
-            />
-          </GridItem>
-        </Grid>
+            <GridItem as={motion.div} variants={itemVariants}>
+              <FreightCard
+                image={specialTruck}
+                alt="Frete Cargas Especiais"
+                title="Frete Cargas Especiais"
+                categoria="Frete Cargas Especiais"
+                subcategoria="Perigosa (granel sólido)"
+                onSelect={handleSelectFreight}
+              />
+            </GridItem>
+          </Grid>
+        </motion.div>
       </VStack>
     </Box>
   );
