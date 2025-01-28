@@ -14,22 +14,18 @@ import { ArrowBackIcon } from "@chakra-ui/icons";
 import { useNavigate } from 'react-router-dom';
 import { FormContext } from '../../contexts/FormContext';
 
-// Importante: Instale framer-motion e importe
+// Import framer-motion
 import { motion } from 'framer-motion';
 
 import "./FreightSelection.css";
 
-// Imagens (exemplo)
 import residentialTruck from '../../assets/images/residentialTruck.png';
 import commercialTruck from '../../assets/images/commercialTruck.png';
 import heavyLoad from '../../assets/images/heavyLoad.png';
 import refrigeratedTruck from '../../assets/images/refrigeratedTruck.png';
 import specialTruck from '../../assets/images/specialTruck.png';
 
-// Seu componente de card
 import FreightCard from './componentes/FreightCard';
-
-// Mapeamento (seu código)
 import { freightToAxes } from '../../utils/freightMapping';
 
 export default function FreightSelection() {
@@ -38,31 +34,23 @@ export default function FreightSelection() {
   const { updateFormData } = useContext(FormContext);
   const toast = useToast();
 
-  // Variants para o container (Grid). Vamos chamar de containerVariants.
+  // Variants do container (stagger)
   const containerVariants = {
-    hidden: {
-      // estado inicial, pode ser vazio se só quiser staggers
-    },
+    hidden: {},
     show: {
       transition: {
-        // anima os filhos (items) com um pequeno atraso um após o outro
         staggerChildren: 0.2,
       },
     },
   };
 
-  // Variants para cada item (cada card). Chamamos de itemVariants.
+  // Variants de cada item (card)
   const itemVariants = {
-    hidden: {
-      opacity: 0,
-      y: 30,
-    },
+    hidden: { opacity: 0, y: 30 },
     show: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.5, // tempo da animação de cada card
-      },
+      transition: { duration: 0.5 },
     },
   };
 
@@ -180,16 +168,12 @@ export default function FreightSelection() {
           </Text>
         </Text>
 
-        {/* 
-          Animação:
-          - Envolvemos o Grid em um container motion.div para aplicar "containerVariants"
-          - O Grid em si pode ser "as={motion.div}" ou podemos envolver em <motion.div>.
-        */}
+        {/* Container animado do Framer Motion */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          style={{ width: '100%' }} // garante que use a largura total
+          style={{ width: '100%' }}
         >
           <Grid
             templateColumns={{
@@ -198,14 +182,10 @@ export default function FreightSelection() {
               lg: 'repeat(5, auto)',
             }}
             gap={{ base: 2, md: 4 }}
-            justifyContent="center"
+            justifyContent="center"    // Centraliza os cards
             width="100%"
           >
-            {/* Cada GridItem será um item animado */}
-            <GridItem
-              as={motion.div}
-              variants={itemVariants} // Aplica animação a este item
-            >
+            <GridItem as={motion.div} variants={itemVariants}>
               <FreightCard
                 image={residentialTruck}
                 alt="Frete Residencial"

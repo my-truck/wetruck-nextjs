@@ -5,7 +5,7 @@ const FreightCard = ({ image, alt, title, categoria, subcategoria, onSelect }) =
   return (
     <Box
       onClick={() => onSelect(categoria, subcategoria)}
-      width={{ base: '360px', md: '240px', lg: '216px' }}
+      width={{ base: '320px', md: '240px', lg: '216px' }} // Aumentado no mobile
       minHeight={{ base: 'auto', md: '290px', lg: '261px' }}
       bg="white"
       boxShadow="md"
@@ -14,27 +14,29 @@ const FreightCard = ({ image, alt, title, categoria, subcategoria, onSelect }) =
       cursor="pointer"
       transition="all 0.3s"
       display="flex"
-      flexDirection={{ base: 'row', lg: 'column' }}
-      alignItems="center"
-      justifyContent="center"
+      flexDirection={{ base: 'column', lg: 'column' }} // Coluna para ambos
+      alignItems="center" // Centraliza conteúdo
+      justifyContent="center" // Centraliza conteúdo
+      textAlign="center" // Centraliza texto
       _hover={{
         transform: 'scale(1.05)',
         boxShadow: 'xl',
         bg: 'gray.50',
       }}
     >
+      {/* Imagem configurada para ambos os dispositivos */}
       <Image
         src={image}
         alt={alt}
-        boxSize={{ base: '80px', md: '100px', lg: '60px' }}
-        mr={{ base: 3, lg: 0 }}
-        mb={{ base: 0, lg: 3 }}
+        boxSize={{ base: '64px', lg: '64px' }} // Tamanho ajustado no mobile
+        objectFit="cover"
+        mb={3} // Margem abaixo no mobile e desktop
       />
+      {/* Texto do card */}
       <Text
         fontWeight="bold"
         color="gray.700"
-        fontSize={{ base: 'md', md: 'lg', lg: 'xl' }}
-        textAlign={{ base: 'left', lg: 'center' }}
+        fontSize={{ base: 'lg', md: 'lg', lg: 'xl' }} // Fonte maior no mobile
         whiteSpace="normal"
         wordWrap="break-word"
       >
