@@ -18,6 +18,7 @@ import {
   Icon,
   Image,
   Link as ChakraLink,
+  useToast,
 } from "@chakra-ui/react";
 import DefaultAuth from "../../../layouts/auth/Default";
 import illustration from "../../../assets/img/auth/truckbaner01.png";
@@ -37,20 +38,35 @@ function Login() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
 
   const handleClick = () => setShow(!show);
 
-  // Captura a query string e exibe a mensagem de acordo com o valor de "confirmed"
+  // Captura a query string e exibe o toast de acordo com o valor de "confirmed"
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const confirmed = params.get("confirmed");
 
     if (confirmed === "1") {
-      alert("E-mail confirmado com sucesso! Agora você pode fazer login.");
+      toast({
+        title: "E-mail confirmado",
+        description: "E-mail confirmado com sucesso! Agora você pode fazer login.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
     } else if (confirmed === "0") {
-      alert("Ocorreu um erro ao confirmar o e-mail.");
+      toast({
+        title: "Erro na confirmação",
+        description: "Ocorreu um erro ao confirmar o e-mail.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
     }
-  }, [location.search]);
+  }, [location.search, toast]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -69,11 +85,11 @@ function Login() {
       if (response.status === 200 || response.status === 201) {
         const data = response.data;
         const token = data.data.access_token;
-        const userId = data.data.user_id; // Extrai o user_id da resposta
+        const userId = data.data.user_id;
 
         if (token && userId) {
           localStorage.setItem("authToken", token);
-          localStorage.setItem("user_id", userId); // Armazena o user_id no localStorage
+          localStorage.setItem("user_id", userId);
           console.log("Token recebido e armazenado:", token);
           console.log("User ID recebido e armazenado:", userId);
           navigate("/admin/default");
