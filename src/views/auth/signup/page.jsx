@@ -1,5 +1,4 @@
 // src/views/auth/signup/page.jsx
-
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -76,6 +75,9 @@ function Signup() {
       const data = await response.json();
 
       if (response.ok) {
+        // Após a criação da conta, redireciona para o login.
+        // O back-end pode enviar o e-mail de confirmação com um link que, após ser clicado,
+        // redirecione o usuário para /auth/login?confirmed=1 (ou confirmed=0, se houver erro)
         navigate("/auth/login", {
           state: { success: "Conta criada com sucesso. Faça login." },
         });
@@ -111,7 +113,7 @@ function Signup() {
         >
           <Image
             src={logoTruckPreto}
-            alt="logo truck  preto"
+            alt="logo truck preto"
             maxW="150px"
             mx="auto"
           />

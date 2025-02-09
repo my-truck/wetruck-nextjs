@@ -1,7 +1,6 @@
 // src/components/auth/Login.js
-
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Button,
@@ -25,7 +24,7 @@ import illustration from "../../../assets/img/auth/truckbaner01.png";
 import logoTruckPreto from "../../../assets/images/logotruckpreto.png";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { RiEyeCloseLine } from "react-icons/ri";
-import axios from '../../../axiosInstance';
+import axios from "../../../axiosInstance";
 
 function Login() {
   const textColor = useColorModeValue("navy.700", "white");
@@ -37,7 +36,21 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+
   const handleClick = () => setShow(!show);
+
+  // Captura a query string e exibe a mensagem de acordo com o valor de "confirmed"
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const confirmed = params.get("confirmed");
+
+    if (confirmed === "1") {
+      alert("E-mail confirmado com sucesso! Agora você pode fazer login.");
+    } else if (confirmed === "0") {
+      alert("Ocorreu um erro ao confirmar o e-mail.");
+    }
+  }, [location.search]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -61,8 +74,8 @@ function Login() {
         if (token && userId) {
           localStorage.setItem("authToken", token);
           localStorage.setItem("user_id", userId); // Armazena o user_id no localStorage
-          console.log('Token recebido e armazenado:', token);
-          console.log('User ID recebido e armazenado:', userId);
+          console.log("Token recebido e armazenado:", token);
+          console.log("User ID recebido e armazenado:", userId);
           navigate("/admin/default");
         } else {
           setError("Token ou User ID não recebido. Por favor, tente novamente.");
@@ -98,7 +111,7 @@ function Login() {
         mt={{ base: "-15vh", md: "10vh" }}
         flexDirection="column"
       >
-        {/* Logo no topo somente para o mobile */}
+        {/* Logo para mobile */}
         <Box display={{ base: "block", md: "none" }} mb="20px" textAlign="center">
           <Image src={logoTruckPreto} alt="Logotruck Preto Logo" maxW="150px" mx="auto" />
         </Box>
@@ -164,7 +177,7 @@ function Login() {
               </InputGroup>
             </FormControl>
 
-            {/* Link Esqueci minha senha */}
+            {/* Link "Esqueci minha senha" */}
             <Flex justifyContent="flex-end" mt="10px">
               <ChakraLink
                 as={Link}
@@ -191,7 +204,7 @@ function Login() {
               Entrar
             </Button>
 
-            {/* Link Criar conta */}
+            {/* Link para criar conta */}
             <Flex justifyContent="center" mt="20px">
               <ChakraLink
                 as={Link}
