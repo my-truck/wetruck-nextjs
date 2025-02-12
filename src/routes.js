@@ -25,17 +25,25 @@ import DetalhesCarga from './views/dadoscarga/page';
 import AgendarDataHorario from './views/agendar/page';
 import CalculoValorFinal from './views/calculovalorfinal/page';
 import Profile from './views/perfil/page';
+import ConnectBankAccount from './views/connect-bank-account/ConnectBankAccount';
+
 
 // Configuração das Rotas
 const routes = [
   // Rotas do Painel de Admin
-
   {
     name: 'Perfil',
     layout: '/admin',
-    path: '/perfil', // Adicione essa rota
+    path: '/perfil',
     component: <Profile />,
-    sidebar: false, // Se não quiser exibir no sidebar
+    sidebar: false, // Não exibe no sidebar
+  },
+  {
+    name: 'Conectar Conta Bancária',
+    layout: '/admin',
+    path: '/connect-bank-account', // Rota para a página de conexão bancária
+    component: <ConnectBankAccount />,
+    sidebar: false,
   },
   {
     name: 'Página Inicial',
@@ -101,7 +109,7 @@ const routes = [
   {
     name: 'Cálculo do Valor Final',
     layout: '/admin',
-    path: '/calculovalorfinal', // Corrigido para manter lowercase
+    path: '/calculovalorfinal',
     component: <CalculoValorFinal />,
     sidebar: false,
   },

@@ -9,7 +9,11 @@ export default function UserProfileMenu({ userName }) {
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
-    navigate('/admin/perfil'); // Redireciona para a rota correta
+    navigate('/admin/perfil'); // Redireciona para as configurações do perfil
+  };
+
+  const handleConnectBankAccountClick = () => {
+    navigate('/admin/connect-bank-account'); // Redireciona para a página de conexão da conta bancária
   };
 
   return (
@@ -59,11 +63,29 @@ export default function UserProfileMenu({ userName }) {
             <Text fontSize="sm">Configurações do Perfil</Text>
           </MenuItem>
 
-          <MenuItem _hover={{ bg: 'none' }} borderRadius="8px" px="14px">
+          <MenuItem
+            _hover={{ bg: 'none' }}
+            borderRadius="8px"
+            px="14px"
+            onClick={handleConnectBankAccountClick}
+          >
+            <Text fontSize="sm">Conectar Conta Bancária</Text>
+          </MenuItem>
+
+          <MenuItem
+            _hover={{ bg: 'none' }}
+            borderRadius="8px"
+            px="14px"
+          >
             <Text fontSize="sm">Configurações da Newsletter</Text>
           </MenuItem>
 
-          <MenuItem _hover={{ bg: 'none' }} color="red.400" borderRadius="8px" px="14px">
+          <MenuItem
+            _hover={{ bg: 'none' }}
+            color="red.400"
+            borderRadius="8px"
+            px="14px"
+          >
             <LogoutButton />
           </MenuItem>
         </Flex>
