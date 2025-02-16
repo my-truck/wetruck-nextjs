@@ -1,4 +1,4 @@
-// src/views/calculoValorFinal/page.jsx
+// src/views/calculovalorfinal/page.jsx
 
 import React, { useEffect, useContext, useState } from 'react';
 import {
@@ -12,25 +12,216 @@ import {
   HStack,
   Icon,
   Stack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  FormControl,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  useColorModeValue,
 } from '@chakra-ui/react';
-import { FaCheckCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaLock } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { FormContext } from '../../contexts/FormContext'; // Caminho correto
+import { FormContext } from '../../contexts/FormContext';
 import axios from '../../axiosInstance';
 import moment from 'moment-timezone';
-
+import {
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
 import CaminhaoModelo from '../../assets/images/caminhaomodelo.png';
+import StripeLogo from '../../assets/images/2035148938.png'; // ajuste o caminho conforme sua estrutura
+
+// Componente de Modal para opções de pagamento
+const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
+  const [paymentChoice, setPaymentChoice] = useState('saved'); // 'saved' ou 'new'
+  const [loading, setLoading] = useState(false);
+
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const boxBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.300', 'gray.600');
+
+  const elementStyle = {
+    base: {
+      fontSize: '16px',
+      color: '#424770',
+      '::placeholder': { color: '#aab7c4' },
+    },
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      if (paymentChoice === 'new') {
+        if (!stripe || !elements) {
+          console.error('Stripe ou Elements não foram inicializados.');
+          setLoading(false);
+          return;
+        }
+        // Obtém o elemento do número do cartão (os demais elementos já fazem parte dele)
+        const cardNumberElement = elements.getElement(CardNumberElement);
+        if (!cardNumberElement) {
+          console.error('Elemento de cartão não encontrado.');
+          setLoading(false);
+          return;
+        }
+        const { error, paymentMethod: stripePaymentMethod } =
+          await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardNumberElement,
+          });
+        if (error) {
+          console.error('Erro ao criar PaymentMethod:', error);
+          setLoading(false);
+          return;
+        }
+        // Chama a função de pagamento passando o id gerado
+        await handlePayment('new', stripePaymentMethod.id);
+      } else {
+        // Se o usuário optou por usar o cartão salvo, você pode obter o id do cartão salvo (por exemplo, do formData)
+        // Neste exemplo, chamamos a função com "saved" (você pode adaptar conforme sua lógica)
+        await handlePayment('saved');
+      }
+      onClose();
+    } catch (error) {
+      console.error('Erro ao processar o pagamento:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>Escolha o método de pagamento</ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Box bg={boxBg} boxShadow="md" borderRadius="md" p={4}>
+            <RadioGroup
+              onChange={setPaymentChoice}
+              value={paymentChoice}
+              mb={6}
+            >
+              <VStack align="start" spacing={4}>
+                <Radio value="saved">Usar cartão salvo</Radio>
+                <Radio value="new">Adicionar novo cartão</Radio>
+              </VStack>
+            </RadioGroup>
+            {paymentChoice === 'new' && (
+              <VStack spacing={3} align="stretch">
+                {/* Número do Cartão */}
+                <Box
+                  border="1px solid"
+                  borderColor={borderColor}
+                  p={3}
+                  borderRadius="md"
+                  w="100%"
+                >
+                  <CardNumberElement
+                    options={{
+                      placeholder: 'Número do Cartão',
+                      style: elementStyle,
+                    }}
+                  />
+                </Box>
+                {/* Validade e CVC */}
+                <HStack w="100%" spacing={3}>
+                  <Box
+                    flex="1"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    p={3}
+                    borderRadius="md"
+                  >
+                    <CardExpiryElement
+                      options={{
+                        placeholder: 'Validade (MM/AA)',
+                        style: elementStyle,
+                      }}
+                    />
+                  </Box>
+                  <Box
+                    flex="1"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    p={3}
+                    borderRadius="md"
+                  >
+                    <CardCvcElement
+                      options={{
+                        placeholder: 'CVC',
+                        style: elementStyle,
+                      }}
+                    />
+                  </Box>
+                </HStack>
+              </VStack>
+            )}
+            <HStack mt={4} spacing={4} justify="center" align="center">
+              <Box
+                as="img"
+                src={StripeLogo}
+                alt="Stripe"
+                h="40px"
+                objectFit="contain"
+              />
+              <HStack spacing={1}>
+                <FaLock color="#3996C0" size="13px" />
+                <Text fontSize="sm" color="gray.600">
+                  Criptografia Avançada
+                </Text>
+              </HStack>
+            </HStack>
+          </Box>
+        </ModalBody>
+        <ModalFooter>
+          <HStack spacing={4}>
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              bg="blue.500"
+              color="white"
+              _hover={{ bg: 'blue.600' }}
+              onClick={handleSubmit}
+              isLoading={loading}
+              minWidth="150px"
+            >
+              {loading ? <Spinner /> : 'Confirmar Pagamento'}
+            </Button>
+          </HStack>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+};
 
 export default function CalculoValorFinal() {
   const { formData, updateFormData, resetFormData } = useContext(FormContext);
   const navigate = useNavigate();
   const toast = useToast();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [valorFinal, setValorFinal] = useState(null);
   const [detalhes, setDetalhes] = useState(null);
   const [hasCalculated, setHasCalculated] = useState(false);
+  const [isPaymentModalOpen, setPaymentModalOpen] = useState(false);
 
-  // Mapeamentos Reversos
+  // Instâncias do Stripe para o componente principal (usado pela modal)
+  const stripe = useStripe();
+  const elements = useElements();
+
+  // Mapeamentos reversos para tipos de carga
   const categoriaParaId = {
     'Frete Residencial': 1,
     'Frete Comercial': 2,
@@ -38,46 +229,37 @@ export default function CalculoValorFinal() {
     'Frete Refrigerado, Congelado ou Aquecido': 4,
     'Frete Cargas Especiais': 5,
   };
-
   const subcategoriaParaId = {
     'Carga Geral': 1,
-    'Conteinerizada': 2,
+    Conteinerizada: 2,
     'Granel Sólido': 3,
     'Granel Líquido': 4,
-    'Neogranel': 5,
+    Neogranel: 5,
     'Carga Granel Pressurizada': 6,
     'Frigorificada ou Aquecida': 7,
     'Perigosa (frigorificada ou aquecida)': 8,
     'Perigosa (granel sólido)': 9,
     'Perigosa (granel líquido)': 10,
     'Perigosa (conteinerizada)': 11,
-    // Adicione outras subcategorias conforme necessário
   };
-
-  // Criar Mapeamentos Reversos (ID para String)
   const idParaCategoria = Object.fromEntries(
-    Object.entries(categoriaParaId).map(([key, value]) => [value, key])
+    Object.entries(categoriaParaId).map(([key, value]) => [value, key]),
   );
-
   const idParaSubcategoria = Object.fromEntries(
-    Object.entries(subcategoriaParaId).map(([key, value]) => [value, key])
+    Object.entries(subcategoriaParaId).map(([key, value]) => [value, key]),
   );
 
   useEffect(() => {
-    console.log('Form Data no CalculoValorFinal:', formData);
-
-    // Logs individuais para depuração
-    console.log('Origin:', formData.origin);
-    console.log('Destination:', formData.destination);
-    console.log('Class Type ID:', formData.classTypeId);
-    console.log('Vehicle Type ID:', formData.vehicleTypeId);
-    console.log('Axle Number:', formData.eixoNumber);
-
-    // Definir os campos obrigatórios para o cálculo do frete
-    const requiredFields = ['origin', 'destination', 'classTypeId', 'vehicleTypeId', 'eixoNumber'];
+    // Verifica se os campos obrigatórios foram preenchidos
+    const requiredFields = [
+      'origin',
+      'destination',
+      'classTypeId',
+      'vehicleTypeId',
+      'eixoNumber',
+    ];
     const missingFields = requiredFields.filter((field) => {
       if (field === 'origin' || field === 'destination') {
-        // Verificar se o objeto está preenchido e todos os subcampos estão preenchidos
         return (
           !formData[field] ||
           !formData[field].address ||
@@ -88,83 +270,52 @@ export default function CalculoValorFinal() {
       }
       return !formData[field];
     });
-
     if (missingFields.length > 0) {
       toast({
         title: 'Etapas Incompletas',
-        description: `Por favor, complete todas as etapas antes de calcular o valor final. Faltando: ${missingFields.join(
-          ', '
+        description: `Complete todas as etapas. Faltando: ${missingFields.join(
+          ', ',
         )}`,
         status: 'warning',
         duration: 5000,
         isClosable: true,
       });
-      navigate('/admin/freight-selection'); // Atualize para a rota correta
+      navigate('/admin/freight-selection');
       return;
     }
-
     if (!hasCalculated) {
       calcularValor();
     }
-    // Adicione 'formData' e 'hasCalculated' como dependências
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, hasCalculated, navigate, toast]);
 
   const calcularValor = async () => {
     try {
       setLoading(true);
-
-      // Garantir que os IDs existam no mapeamento
       const categoriaString = idParaCategoria[formData.classTypeId];
       const subcategoriaString = idParaSubcategoria[formData.vehicleTypeId];
-
-      console.log('Categoria String:', categoriaString);
-      console.log('Subcategoria String:', subcategoriaString);
-
       if (!categoriaString || !subcategoriaString) {
         throw new Error('Categoria ou Subcategoria inválida.');
       }
-
-      // Construir o endereço completo de origem e destino
-      const originAddress = `${formData.origin.address}, ${formData.origin.city}, ${formData.origin.state}, ${formData.origin.postalCode}`;
-      const destinationAddress = `${formData.destination.address}, ${formData.destination.city}, ${formData.destination.state}, ${formData.destination.postalCode}`;
-
-      // Obter o número do eixo selecionado e ajustar conforme necessário
       let axleNumber = formData.eixoNumber;
       if (axleNumber === 1 || axleNumber === 2) {
         axleNumber = 2;
       }
-
-      console.log('Axle Number Adjusted:', axleNumber);
-
-      // Construir o payload conforme especificado
       const requestBody = {
-        origins: originAddress,
-        destinations: destinationAddress,
+        origins: `${formData.origin.address}, ${formData.origin.city}, ${formData.origin.state}, ${formData.origin.postalCode}`,
+        destinations: `${formData.destination.address}, ${formData.destination.city}, ${formData.destination.state}, ${formData.destination.postalCode}`,
         loadType: [categoriaString, subcategoriaString],
         axle: axleNumber,
       };
-
-      console.log('Request Body:', JSON.stringify(requestBody, null, 2));
-
-      // Enviar a requisição para o endpoint correto
-      console.log(`Enviando requisição para: /work/calculate-freight`);
-
       const response = await axios.post('/work/calculate-freight', requestBody);
-
-      console.log('Response Data:', response.data);
-
       if (response.data.statusCode !== 200) {
         throw new Error(response.data.message || 'Erro no cálculo do frete');
       }
-
       const dadosFrete = response.data.data;
-
-      // **Convertendo totalFreight para número**
       const totalFreight = Number(dadosFrete.totalFreight);
       if (isNaN(totalFreight)) {
         throw new Error('O valor total do frete não é um número válido.');
       }
-
       setValorFinal(totalFreight);
       setDetalhes([
         `Nome: ${dadosFrete.name}`,
@@ -173,101 +324,66 @@ export default function CalculoValorFinal() {
         `Tipo de Carga: ${dadosFrete.typeOfLoad}`,
         `Tipo de Caminhão: ${dadosFrete.typeOfTruck}`,
       ]);
-
-      // Atualizar o FormContext com o valor final e distância
       updateFormData({
         value: totalFreight,
         distance: dadosFrete.distance,
       });
-
       setHasCalculated(true);
     } catch (error) {
-      console.error('Erro ao calcular o valor final:', error);
-      if (error.response) {
-        console.error('Response Data:', error.response.data);
-        const errorMessage = Array.isArray(error.response.data.message)
-          ? error.response.data.message.join(', ')
-          : error.response.data.message || 'Erro no cálculo do frete';
-        toast({
-          title: 'Erro',
-          description: `Erro ${error.response.status}: ${errorMessage}`,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else if (error.request) {
-        console.error('Request:', error.request);
-        toast({
-          title: 'Erro',
-          description: 'Nenhuma resposta recebida do servidor. Verifique sua conexão.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else {
-        console.error('Error Message:', error.message);
-        toast({
-          title: 'Erro',
-          description: `Erro: ${error.message}`,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+      console.error('Erro ao calcular o frete:', error);
+      toast({
+        title: 'Erro',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePedido = async () => {
+  // Função que monta o payload e envia a requisição para criar o pedido
+  const processPayment = async (paymentType, paymentMethodId) => {
     try {
-      console.log('Iniciando handlePedido');
-      console.log('Form Data:', formData);
-      // Removido: console.log('userId:', formData.userId, 'Tipo:', typeof formData.userId);
-
       setLoading(true);
-
-      // Garantir que classTypeId e vehicleTypeId sejam números
-      const classTypeId = formData.classTypeId ? Number(formData.classTypeId) : null;
-      const vehicleTypeId = formData.vehicleTypeId ? Number(formData.vehicleTypeId) : null;
-
+      const categoriaString = idParaCategoria[formData.classTypeId];
+      const subcategoriaString = idParaSubcategoria[formData.vehicleTypeId];
+      if (!categoriaString || !subcategoriaString) {
+        throw new Error('Categoria ou Subcategoria inválida.');
+      }
+      let axleNumber = formData.eixoNumber;
+      if (axleNumber === 1 || axleNumber === 2) {
+        axleNumber = 2;
+      }
       const pedidoBody = {
-        name: `Frete de ${formData.origin.city} para ${formData.destination.city}`,
-        description: `Transporte de carga de ${formData.origin.city} para ${formData.destination.city}`,
-        value: formData.value,
-        distance: formData.distance,
-         
-        origin: {
-          address: formData.origin.address,
-          city: formData.origin.city,
-          state: formData.origin.state,
-          postalCode: formData.origin.postalCode,
-          complement: formData.origin.complement || '', // Garantir string
+        workDetails: {
+          origins: formData.originCoordinates || '-20.3475276, -40.3365387',
+          destinations:
+            formData.destinationCoordinates || '-20.3475264, -40.3545634',
+          loadType: [categoriaString, subcategoriaString],
+          axle: axleNumber,
         },
-        destination: {
-          address: formData.destination.address,
-          city: formData.destination.city,
-          state: formData.destination.state,
-          postalCode: formData.destination.postalCode,
-          complement: formData.destination.complement || '', // Garantir string
+        paymentMethod: 'stripe',
+        paymentData: {
+          // Se o usuário escolheu "new", usamos o paymentMethodId criado; caso contrário, você pode buscar o cartão salvo
+          paymentMethodId: paymentMethodId || null,
+          savePaymentMethod:
+            formData.savePaymentMethod !== undefined
+              ? formData.savePaymentMethod
+              : true,
         },
-        scheduleStart: moment(formData.scheduleStart).tz('America/Sao_Paulo').toISOString(),
-        scheduleEnd: moment(formData.scheduleEnd).tz('America/Sao_Paulo').toISOString(),
-        classTypeId: classTypeId, // Número
-        vehicleTypeId: vehicleTypeId, // Número
+        scheduleStart: moment(formData.scheduleStart)
+          .tz('America/Sao_Paulo')
+          .toISOString(),
+        scheduleEnd: moment(formData.scheduleEnd)
+          .tz('America/Sao_Paulo')
+          .toISOString(),
       };
 
-      console.log('Pedido Body:', JSON.stringify(pedidoBody, null, 2));
-
-      // Enviar a requisição para o endpoint correto
-      console.log(`Enviando requisição para: /work`);
-
       const response = await axios.post('/work', pedidoBody);
-
-      console.log('Response Data (Pedido):', response.data);
-
-      if (response.status >= 200 && response.status < 300) { // Verificar status HTTP real
-        const pedidoId = response.data.data?.id || response.data.id || 'N/A'; // Ajuste conforme a estrutura da resposta
+      if (response.status >= 200 && response.status < 300) {
+        const pedidoId = response.data.data?.id || response.data.id || 'N/A';
         toast({
           title: 'Pedido realizado com sucesso',
           description: `Seu pedido foi criado com ID: ${pedidoId}`,
@@ -275,56 +391,28 @@ export default function CalculoValorFinal() {
           duration: 5000,
           isClosable: true,
         });
-
-        // **Resetar o formulário após o pedido ser realizado com sucesso**
         resetFormData();
-
         navigate('/admin/default');
       } else {
         throw new Error(response.data.message || 'Erro ao criar o pedido');
       }
     } catch (error) {
       console.error('Erro ao criar o pedido:', error);
-      if (error.response) {
-        console.error('Response Data:', error.response.data);
-        const errorMessage = Array.isArray(error.response.data.message)
-          ? error.response.data.message.join(', ')
-          : error.response.data.message || 'Erro ao criar o pedido';
-        toast({
-          title: 'Erro',
-          description: `Erro ${error.response.status}: ${errorMessage}`,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else if (error.request) {
-        console.error('Request:', error.request);
-        toast({
-          title: 'Erro',
-          description: 'Nenhuma resposta recebida do servidor. Verifique sua conexão.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } else {
-        console.error('Error Message:', error.message);
-        toast({
-          title: 'Erro',
-          description: `Erro: ${error.message}`,
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+      toast({
+        title: 'Erro',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancelar = () => {
-    // **Resetar o formulário e navegar para /admin/default**
-    resetFormData(); // Reseta o formulário
-    navigate('/admin/default'); // Navega para a rota desejada
+  // Abre a modal de pagamento
+  const handlePedirAgora = () => {
+    setPaymentModalOpen(true);
   };
 
   if (loading) {
@@ -353,7 +441,6 @@ export default function CalculoValorFinal() {
       mt={{ base: 0, md: '-100px' }}
     >
       <VStack spacing={8} align="center" maxW="1200px" w="100%">
-        {/* Título */}
         <Text
           fontSize={{ base: '28px', md: '40px' }}
           fontWeight="extrabold"
@@ -361,16 +448,13 @@ export default function CalculoValorFinal() {
           textAlign="center"
           lineHeight="1.2"
         >
-          <Text as="span" color="#2D3748" display="inline">
+          <Text as="span" color="#2D3748">
             Cálculo do
-          </Text>
-          <Text as="span" color="#ED8936" display="inline">
-            {' '}Valor Final
+          </Text>{' '}
+          <Text as="span" color="#ED8936">
+            Valor Final
           </Text>
         </Text>
-
-        {/* Remover o componente UserIdDisplay */}
-
         <Stack
           direction={{ base: 'column', md: 'row' }}
           spacing={8}
@@ -378,7 +462,6 @@ export default function CalculoValorFinal() {
           justify="center"
           w="100%"
         >
-          {/* Seção de Imagem do Caminhão */}
           <VStack
             bg="#E6F0FB"
             borderRadius="24px"
@@ -400,34 +483,44 @@ export default function CalculoValorFinal() {
               <Image
                 src={CaminhaoModelo}
                 alt="Caminhão"
-                objectFit="contain" // Ajuste para conter a imagem sem esticar
+                objectFit="contain"
                 w="100%"
                 h="100%"
               />
             </Box>
           </VStack>
-
-          {/* Informações sobre o Caminhão e Cálculo */}
           <VStack
             align="flex-start"
             spacing={4}
             w={{ base: '100%', md: '40%' }}
             pl={{ base: 0, md: 4 }}
           >
-            <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold" color="#2D3748">
+            <Text
+              fontSize={{ base: 'xl', md: '2xl' }}
+              fontWeight="bold"
+              color="#2D3748"
+            >
               {formData.detalhesCarga || 'Descrição da Carga'}
             </Text>
             <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.500">
               {formData.dimensoes || 'Dimensões da Carga'}
             </Text>
-
-            <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" color="#ED8936">
-              {valorFinal !== null ? `R$ ${valorFinal.toFixed(2)}` : 'Calculando...'}
+            <Text
+              fontSize={{ base: '2xl', md: '3xl' }}
+              fontWeight="bold"
+              color="#ED8936"
+            >
+              {valorFinal !== null
+                ? `R$ ${valorFinal.toFixed(2)}`
+                : 'Calculando...'}
             </Text>
-
-            {/* Lista com Ícones de Check */}
             {detalhes && detalhes.length > 0 && (
-              <VStack align="start" spacing={2} fontSize={{ base: 'sm', md: 'md' }} color="gray.700">
+              <VStack
+                align="start"
+                spacing={2}
+                fontSize={{ base: 'sm', md: 'md' }}
+                color="gray.700"
+              >
                 {detalhes.map((item, index) => (
                   <HStack key={index}>
                     <Icon as={FaCheckCircle} color="green.500" boxSize={5} />
@@ -436,27 +529,21 @@ export default function CalculoValorFinal() {
                 ))}
               </VStack>
             )}
-
-            {/* Botões de Ação */}
             <HStack spacing={4} mt={4} w="100%" justifyContent="space-between">
-              {/* Botão "Cancelar" */}
               <Button
                 variant="outline"
                 colorScheme="red"
                 size="lg"
                 w="45%"
-                onClick={handleCancelar}
+                onClick={() => navigate('/admin/default')}
               >
                 Cancelar
               </Button>
-
-              {/* Botão "Pedir agora" */}
               <Button
                 colorScheme="blue"
                 size="lg"
                 w="45%"
-                onClick={handlePedido}
-                isLoading={loading} // Adiciona estado de loading no botão
+                onClick={handlePedirAgora}
               >
                 Pedir agora
               </Button>
@@ -464,6 +551,13 @@ export default function CalculoValorFinal() {
           </VStack>
         </Stack>
       </VStack>
+
+      {/* Modal de opções de pagamento */}
+      <PaymentOptionsModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        handlePayment={processPayment}
+      />
     </Box>
   );
 }
