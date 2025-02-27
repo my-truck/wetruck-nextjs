@@ -123,7 +123,7 @@ export default function FreteDetalhes() {
     if (frete.paymentStatus === FRETE_STATUS.AUTHORIZED) {
       return { label: 'Aguardando Aceite', color: 'orange' };
     }
-    if (frete.status === FRETE_STATUS.PAID) {
+    if (frete.paymentStatus === FRETE_STATUS.PAID) {
       return { label: 'Pedido Confirmado', color: 'green' };
     }
     if (frete.status === FRETE_STATUS.COMPLETED) {
@@ -233,8 +233,9 @@ export default function FreteDetalhes() {
   if (error) return <ErrorState message={error} />;
   if (!fretes.length) return <EmptyState message="Nenhum frete encontrado." />;
 
+  // Ajuste nos filtros: os pedidos confirmados são os que retornam paymentStatus "paid"
   const fretesParaAceitar = fretes.filter((f) => f.paymentStatus === FRETE_STATUS.AUTHORIZED);
-  const fretesAceitos = fretes.filter((f) => f.status === FRETE_STATUS.PAID);
+  const fretesAceitos = fretes.filter((f) => f.paymentStatus === FRETE_STATUS.PAID);
   const fretesConcluidos = fretes.filter((f) => f.status === FRETE_STATUS.COMPLETED);
 
   return (
