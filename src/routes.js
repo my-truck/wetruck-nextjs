@@ -1,5 +1,3 @@
-// src/routes.js
-
 import React from 'react';
 import { Icon } from '@chakra-ui/react';
 import {
@@ -26,7 +24,7 @@ import AgendarDataHorario from './views/agendar/page';
 import CalculoValorFinal from './views/calculovalorfinal/page';
 import Profile from './views/perfil/page';
 import ConnectBankAccount from './views/connect-bank-account/ConnectBankAccount';
-
+import Corridas from './views/corridas/page'; // Importação da nova página de Corridas
 
 // Configuração das Rotas
 const routes = [
@@ -112,6 +110,14 @@ const routes = [
     path: '/calculovalorfinal',
     component: <CalculoValorFinal />,
     sidebar: false,
+  },
+  {
+    name: 'Corridas', // Nova rota para Corridas
+    layout: '/admin',
+    path: '/corridas',
+    icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />, // Ícone para Corridas
+    component: <Corridas />,
+    sidebar: true, // Exibe no sidebar
   },
 
   // Rotas de Autenticação

@@ -16,6 +16,10 @@ export default function UserProfileMenu({ userName }) {
     navigate('/admin/connect-bank-account'); // Redireciona para a página de conexão da conta bancária
   };
 
+  const handleCorridasClick = () => {
+    navigate('/admin/corridas'); // Redireciona para a página de Corridas
+  };
+
   return (
     <Menu>
       <MenuButton
@@ -70,6 +74,15 @@ export default function UserProfileMenu({ userName }) {
             onClick={handleConnectBankAccountClick}
           >
             <Text fontSize="sm">Conectar Conta Bancária</Text>
+          </MenuItem>
+
+          <MenuItem
+            _hover={{ bg: 'none' }}
+            borderRadius="8px"
+            px="14px"
+            onClick={handleCorridasClick} // Adicionado o redirecionamento para Corridas
+          >
+            <Text fontSize="sm">Corridas</Text> {/* Novo item para Corridas */}
           </MenuItem>
 
           <MenuItem
