@@ -1,5 +1,3 @@
-// src/views/calculovalorfinal/page.jsx
-
 import React, { useEffect, useContext, useState } from 'react';
 import {
   Box,
@@ -68,7 +66,7 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
           setLoading(false);
           return;
         }
-        // Obtém o elemento do número do cartão (os demais elementos já fazem parte dele)
+        // Obtém o elemento do número do cartão
         const cardNumberElement = elements.getElement(CardNumberElement);
         if (!cardNumberElement) {
           console.error('Elemento de cartão não encontrado.');
@@ -88,8 +86,7 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
         // Chama a função de pagamento passando o id gerado
         await handlePayment('new', stripePaymentMethod.id);
       } else {
-        // Se o usuário optou por usar o cartão salvo, você pode obter o id do cartão salvo (por exemplo, do formData)
-        // Neste exemplo, chamamos a função com "saved" (você pode adaptar conforme sua lógica)
+        // Se o usuário optou por usar o cartão salvo
         await handlePayment('saved');
       }
       onClose();
@@ -243,10 +240,10 @@ export default function CalculoValorFinal() {
     'Perigosa (conteinerizada)': 11,
   };
   const idParaCategoria = Object.fromEntries(
-    Object.entries(categoriaParaId).map(([key, value]) => [value, key]),
+    Object.entries(categoriaParaId).map(([key, value]) => [value, key])
   );
   const idParaSubcategoria = Object.fromEntries(
-    Object.entries(subcategoriaParaId).map(([key, value]) => [value, key]),
+    Object.entries(subcategoriaParaId).map(([key, value]) => [value, key])
   );
 
   useEffect(() => {
@@ -273,9 +270,7 @@ export default function CalculoValorFinal() {
     if (missingFields.length > 0) {
       toast({
         title: 'Etapas Incompletas',
-        description: `Complete todas as etapas. Faltando: ${missingFields.join(
-          ', ',
-        )}`,
+        description: `Complete todas as etapas. Faltando: ${missingFields.join(', ')}`,
         status: 'warning',
         duration: 5000,
         isClosable: true,
@@ -358,20 +353,16 @@ export default function CalculoValorFinal() {
       }
       const pedidoBody = {
         workDetails: {
-          origins: formData.originCoordinates || '-20.3475276, -40.3365387',
-          destinations:
-            formData.destinationCoordinates || '-20.3475264, -40.3545634',
+          origins: `${formData.origin.address}, ${formData.origin.city}, ${formData.origin.state}, ${formData.origin.postalCode}`,
+          destinations: `${formData.destination.address}, ${formData.destination.city}, ${formData.destination.state}, ${formData.destination.postalCode}`,
           loadType: [categoriaString, subcategoriaString],
           axle: axleNumber,
         },
         paymentMethod: 'stripe',
         paymentData: {
-          // Se o usuário escolheu "new", usamos o paymentMethodId criado; caso contrário, você pode buscar o cartão salvo
           paymentMethodId: paymentMethodId || null,
           savePaymentMethod:
-            formData.savePaymentMethod !== undefined
-              ? formData.savePaymentMethod
-              : true,
+            formData.savePaymentMethod !== undefined ? formData.savePaymentMethod : true,
         },
         scheduleStart: moment(formData.scheduleStart)
           .tz('America/Sao_Paulo')
