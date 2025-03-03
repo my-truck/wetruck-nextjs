@@ -1,3 +1,4 @@
+// Step1ConnectAccount.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -5,29 +6,40 @@ import {
   Heading,
   Text,
   VStack,
-  Flex,
   useToast,
+  Icon,
+  useColorModeValue
 } from '@chakra-ui/react';
-import axiosInstance from '../../axiosInstance';
 import { motion } from 'framer-motion';
+import { FaLink, FaCheck } from 'react-icons/fa';
+import axiosInstance from '../../axiosInstance';
 
 const MotionBox = motion(Box);
 
 export default function Step1ConnectAccount({ onNext }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreated, setIsCreated] = useState(false);
   const toast = useToast();
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   const handleConnectAccount = async () => {
     try {
       setIsLoading(true);
       await axiosInstance.post('/stripe/custom-connect/create');
+      setIsCreated(true);
       toast({
         title: 'Conta criada com sucesso!',
         status: 'success',
         duration: 5000,
         isClosable: true,
       });
-      onNext(); // Avança para a próxima etapa
+      
+      // Delay para mostrar a confirmação antes de avançar
+      setTimeout(() => {
+        onNext();
+      }, 1500);
+      
     } catch (error) {
       toast({
         title: 'Erro ao criar conta',
@@ -43,70 +55,56 @@ export default function Step1ConnectAccount({ onNext }) {
 
   return (
     <MotionBox
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
-      p={5}
-      borderRadius="lg"
-      boxShadow="lg"
-      bg="white"
-      maxW="600px"
+      p={6}
+      borderRadius="xl"
+      boxShadow="xl"
+      bg={bgColor}
+      border="1px solid"
+      borderColor={borderColor}
       mx="auto"
-      mt={10}
     >
-      {/* Indicador de progresso */}
-      <Flex justify="center" mb={6}>
-        <Flex direction="row" wrap="nowrap" align="center" gap={4}>
-          <Box
-            bg="blue.500"
-            color="white"
-            w="40px"
-            h="40px"
-            borderRadius="full"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            1
-          </Box>
-          <Box
-            bg="gray.300"
-            color="white"
-            w="40px"
-            h="40px"
-            borderRadius="full"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            2
-          </Box>
-          <Box
-            bg="gray.300"
-            color="white"
-            w="40px"
-            h="40px"
-            borderRadius="full"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            3
-          </Box>
-        </Flex>
-      </Flex>
-
-      <VStack spacing={4} textAlign="center">
-        <Heading size="lg">Conectar Conta Bancária</Heading>
-        <Text>
-          Clique no botão abaixo para conectar sua conta bancária ao Stripe.
+      <VStack spacing={6} textAlign="center">
+        <Box 
+          p={4} 
+          bg="blue.50" 
+          borderRadius="full" 
+          color="blue.500"
+        >
+          <Icon 
+            as={isCreated ? FaCheck : FaLink} 
+            boxSize={12} 
+            transition="all 0.3s"
+          />
+        </Box>
+        
+        <Heading size="lg" color="blue.600">
+          Conectar Conta Bancária
+        </Heading>
+        
+        <Text color="gray.600" fontSize="md" maxW="400px">
+          Para receber seus pagamentos, precisamos conectar sua conta bancária ao nosso sistema de processamento seguro. 
+          Clique no botão abaixo para iniciar.
         </Text>
+        
         <Button
+          size="lg"
           colorScheme="blue"
           onClick={handleConnectAccount}
           isLoading={isLoading}
+          loadingText="Conectando..."
+          disabled={isCreated}
+          _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+          transition="all 0.2s"
+          width="100%"
+          maxW="300px"
+          mt={4}
+          leftIcon={<FaLink />}
         >
-          Conectar Conta
+          {isCreated ? 'Conta Conectada' : 'Conectar Conta'}
         </Button>
       </VStack>
     </MotionBox>

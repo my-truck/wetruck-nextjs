@@ -1,5 +1,14 @@
+// ConnectBankAccount.jsx - Main Container Component
 import React, { useState, useEffect } from 'react';
-import { Box, HStack, Text } from '@chakra-ui/react';
+import { 
+  Box, 
+  Container, 
+  Flex, 
+  HStack, 
+  Text, 
+  useBreakpointValue,
+  useColorModeValue
+} from '@chakra-ui/react';
 import { AnimatePresence } from 'framer-motion';
 import Step1ConnectAccount from './Step1ConnectAccount';
 import Step2KycForm from './Step2KycForm';
@@ -36,8 +45,12 @@ const isAccountReady = (status) => {
 
 export default function ConnectBankAccount() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [accountStatus, setAccountStatus] = useState(null);
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const cardBgColor = useColorModeValue('white', 'gray.800');
+  const stepSizes = useBreakpointValue({ base: 'xs', md: 'sm', lg: 'md' });
 
-  const nextStep = () => setCurrentStep((prev) => prev + 1);
+  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
   const restartProcess = () => setCurrentStep(1);
 
   // Verifica o status da conta assim que o componente for montado
@@ -46,6 +59,8 @@ export default function ConnectBankAccount() {
       try {
         const response = await axiosInstance.get('/stripe/custom-connect/status');
         const statusData = response.data;
+        setAccountStatus(statusData);
+        
         // Se a conta estiver pronta, pula direto para a etapa 3
         if (isAccountReady(statusData)) {
           setCurrentStep(3);
@@ -66,7 +81,7 @@ export default function ConnectBankAccount() {
       case 2:
         return <Step2KycForm onNext={nextStep} />;
       case 3:
-        return <Step3Status onRestart={restartProcess} />;
+        return <Step3Status accountStatus={accountStatus} onRestart={restartProcess} />;
       default:
         return null;
     }
@@ -74,46 +89,81 @@ export default function ConnectBankAccount() {
 
   return (
     <Box
-      p={[2, 4]}
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
+      bg={bgColor}
       minHeight="100vh"
+      py={8}
     >
-      {/* Indicador de etapas */}
-      <HStack
-        spacing={[1, 2]}
-        justify="center"
-        mb={[2, 4]}
-        overflowX="auto"
-        whiteSpace="nowrap"
-      >
-        {steps.map((step) => (
-          <Box
-            key={step.id}
-            px={[2, 3]}
-            py={[1, 2]}
-            borderRadius="md"
-            bg={step.id === currentStep ? 'blue.500' : 'gray.300'}
+      <Container maxW="container.md">
+        {/* Barra de progresso */}
+        <Flex 
+          justify="center" 
+          mb={8}
+          position="relative"
+          px={4}
+        >
+          <HStack 
+            spacing={0} 
+            justify="space-between"
+            width="100%"
+            maxW="400px"
           >
-            <Text
-              whiteSpace="nowrap"
-              fontSize={['xs', 'sm']}
-              color={step.id === currentStep ? 'white' : 'black'}
-            >
-              {step.label}
-            </Text>
-          </Box>
-        ))}
-      </HStack>
+            {steps.map((step, index) => (
+              <React.Fragment key={step.id}>
+                {/* Círculo do passo */}
+                <Flex 
+                  direction="column" 
+                  align="center"
+                  zIndex={2}
+                >
+                  <Flex
+                    w={stepSizes === 'xs' ? "36px" : stepSizes === 'sm' ? "40px" : "50px"}
+                    h={stepSizes === 'xs' ? "36px" : stepSizes === 'sm' ? "40px" : "50px"}
+                    borderRadius="full"
+                    bg={currentStep >= step.id ? "blue.500" : "gray.300"}
+                    color="white"
+                    justify="center"
+                    align="center"
+                    fontWeight="bold"
+                    boxShadow={currentStep === step.id ? "0 0 0 4px rgba(66, 153, 225, 0.3)" : "none"}
+                    transition="all 0.3s"
+                  >
+                    {step.id}
+                  </Flex>
+                  <Text
+                    mt={2}
+                    fontSize={stepSizes}
+                    fontWeight={currentStep === step.id ? "semibold" : "normal"}
+                    color={currentStep >= step.id ? "blue.600" : "gray.500"}
+                    textAlign="center"
+                  >
+                    {step.label}
+                  </Text>
+                </Flex>
+                
+                {/* Linha de conexão */}
+                {index < steps.length - 1 && (
+                  <Box 
+                    flex={1} 
+                    h="3px" 
+                    bg={currentStep > step.id ? "blue.500" : "gray.300"}
+                    transition="all 0.3s"
+                    position="relative"
+                    top={stepSizes === 'xs' ? "-18px" : stepSizes === 'sm' ? "-20px" : "-25px"}
+                    zIndex={1}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </HStack>
+        </Flex>
 
-      {/* Conteúdo da etapa com animação */}
-      <AnimatePresence exitBeforeEnter>
-        <Box key={currentStep} width="100%" maxW="600px">
-          {renderStep()}
-        </Box>
-      </AnimatePresence>
+        {/* Conteúdo da etapa com animação */}
+        <AnimatePresence mode="wait">
+          <Box key={currentStep} width="100%">
+            {renderStep()}
+          </Box>
+        </AnimatePresence>
+      </Container>
     </Box>
   );
 }
