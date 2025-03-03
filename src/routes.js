@@ -124,9 +124,9 @@ const routes = [
   {
     name: 'Chat',
     layout: '/admin',
-    path: '/chat/:driverId', // rota que aceita um parâmetro :driverId
+    path: '/chat/:driverId', 
     component: <ChatPage />,
-    sidebar: false, // ou true, se quiser no menu
+    sidebar: false, 
   },
 
   // Rotas de Autenticação

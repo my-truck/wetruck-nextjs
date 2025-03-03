@@ -1,34 +1,56 @@
-// src/services/chatService.js
+// chatService.js
 import axiosInstance from '../../../../../axiosInstance';
 
-// Inicia/recupera a sala, enviando o receiverId (id do motorista) como número
-export const startRoom = async (receiverId) => {
-  const payload = { receiverId: Number(receiverId) }; // Converte para número
-  const response = await axiosInstance.post('/messages/startRoom', payload);
-  return response.data; // Ex.: { id, userMaster, ... }
+/**
+ * Inicia/recupera a sala utilizando o freteId na URL:
+ * POST /messages/startRoom/:freteId
+ */
+export const startRoom = async (freteId) => {
+  const numericFreteId = parseInt(freteId, 10);
+  const response = await axiosInstance.post(`/messages/startRoom/${numericFreteId}`);
+  if (response.status === 200 || response.status === 201) {
+    return response.data; // Ex.: { id, userMaster, workId, ... }
+  } else {
+    throw new Error(`Erro ao iniciar a sala. Status code: ${response.status}`);
+  }
 };
 
-
+/**
+ * Obtém a conversa de uma sala, utilizando o roomId:
+ * GET /messages/conversation/:roomId
+ */
 export const getConversation = async (roomId) => {
-  const numericRoomId = Number(roomId); 
+  const numericRoomId = parseInt(roomId, 10);
   const response = await axiosInstance.get(`/messages/conversation/${numericRoomId}`);
-  return response.data; 
+  if (response.status === 200 || response.status === 201) {
+    return response.data; // Array de mensagens
+  } else {
+    throw new Error(`Erro ao carregar a conversa. Status code: ${response.status}`);
+  }
 };
 
-// Obter todas as mensagens de um usuário
+/**
+ * Envia mensagem, com o payload exato: { roomId, message }
+ * POST /messages/send
+ */
+export const sendMessage = async ({ roomId, message }) => {
+  const payload = { roomId: parseInt(roomId, 10), message };
+  const response = await axiosInstance.post('/messages/send', payload);
+  if (response.status === 200 || response.status === 201) {
+    return response.data;
+  } else {
+    throw new Error(`Erro ao enviar mensagem. Status code: ${response.status}`);
+  }
+};
+
+/**
+ * Exemplo de outras funções que você possa precisar
+ */
 export const getUserMessages = async () => {
   const response = await axiosInstance.get('/messages/user');
-  return response.data; 
+  return response.data;
 };
 
-
-export const sendMessage = async ({ roomId, receiverId, message }) => {
-  const payload = { roomId, receiverId: Number(receiverId), message };
-  const response = await axiosInstance.post('/messages/send', payload);
-  return response.data; // Retorna a mensagem enviada
-};
-
-// Deletar mensagem
 export const deleteMessage = async (messageId) => {
   const response = await axiosInstance.delete(`/messages/${messageId}`);
   return response.data;

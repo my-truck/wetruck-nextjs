@@ -1,13 +1,12 @@
-// ConnectBankAccount.jsx - Main Container Component
 import React, { useState, useEffect } from 'react';
 import { 
   Box, 
-  Container, 
-  Flex, 
   HStack, 
   Text, 
-  useBreakpointValue,
-  useColorModeValue
+  useColorModeValue,
+  Container,
+  Progress,
+  Divider
 } from '@chakra-ui/react';
 import { AnimatePresence } from 'framer-motion';
 import Step1ConnectAccount from './Step1ConnectAccount';
@@ -45,10 +44,12 @@ const isAccountReady = (status) => {
 
 export default function ConnectBankAccount() {
   const [currentStep, setCurrentStep] = useState(1);
-  const [accountStatus, setAccountStatus] = useState(null);
   const bgColor = useColorModeValue('gray.50', 'gray.900');
-  const cardBgColor = useColorModeValue('white', 'gray.800');
-  const stepSizes = useBreakpointValue({ base: 'xs', md: 'sm', lg: 'md' });
+  const stepBgActive = useColorModeValue('blue.500', 'blue.400');
+  const stepBgInactive = useColorModeValue('gray.200', 'gray.600');
+  const stepTextActive = useColorModeValue('white', 'white');
+  const stepTextInactive = useColorModeValue('gray.600', 'gray.200');
+  const progressValue = ((currentStep - 1) / (steps.length - 1)) * 100;
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, steps.length));
   const restartProcess = () => setCurrentStep(1);
@@ -59,8 +60,6 @@ export default function ConnectBankAccount() {
       try {
         const response = await axiosInstance.get('/stripe/custom-connect/status');
         const statusData = response.data;
-        setAccountStatus(statusData);
-        
         // Se a conta estiver pronta, pula direto para a etapa 3
         if (isAccountReady(statusData)) {
           setCurrentStep(3);
@@ -81,7 +80,7 @@ export default function ConnectBankAccount() {
       case 2:
         return <Step2KycForm onNext={nextStep} />;
       case 3:
-        return <Step3Status accountStatus={accountStatus} onRestart={restartProcess} />;
+        return <Step3Status onRestart={restartProcess} />;
       default:
         return null;
     }
@@ -89,73 +88,86 @@ export default function ConnectBankAccount() {
 
   return (
     <Box
-      bg={bgColor}
+      p={[4, 6, 8]}
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
       minHeight="100vh"
-      py={8}
+      bg={bgColor}
     >
-      <Container maxW="container.md">
-        {/* Barra de progresso */}
-        <Flex 
-          justify="center" 
-          mb={8}
-          position="relative"
-          px={4}
+      <Container maxW="container.md" pb={8}>
+        {/* Título */}
+        <Text 
+          fontSize={["xl", "2xl"]} 
+          fontWeight="bold" 
+          textAlign="center" 
+          mb={6}
+          color={useColorModeValue('blue.600', 'blue.300')}
         >
-          <HStack 
-            spacing={0} 
+          Conecte sua conta bancária 
+        </Text>
+        
+        {/* Progresso */}
+        <Box mb={8}>
+          <Progress 
+            value={progressValue} 
+            size="sm" 
+            colorScheme="blue" 
+            borderRadius="full" 
+            mb={4}
+          />
+          
+          {/* Indicador de etapas */}
+          <HStack
+            spacing={[2, 4, 6]}
             justify="space-between"
-            width="100%"
-            maxW="400px"
+            mb={4}
+            px={[2, 4]}
           >
-            {steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                {/* Círculo do passo */}
-                <Flex 
-                  direction="column" 
-                  align="center"
-                  zIndex={2}
+            {steps.map((step) => (
+              <Box
+                key={step.id}
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                width={`${100/steps.length}%`}
+              >
+                <Box
+                  width={["36px", "48px"]}
+                  height={["36px", "48px"]}
+                  borderRadius="full"
+                  bg={step.id <= currentStep ? stepBgActive : stepBgInactive}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  mb={2}
+                  boxShadow={step.id === currentStep ? "0 0 0 4px rgba(66, 153, 225, 0.3)" : "none"}
+                  transition="all 0.3s ease"
                 >
-                  <Flex
-                    w={stepSizes === 'xs' ? "36px" : stepSizes === 'sm' ? "40px" : "50px"}
-                    h={stepSizes === 'xs' ? "36px" : stepSizes === 'sm' ? "40px" : "50px"}
-                    borderRadius="full"
-                    bg={currentStep >= step.id ? "blue.500" : "gray.300"}
-                    color="white"
-                    justify="center"
-                    align="center"
+                  <Text
+                    fontSize={["md", "lg"]}
                     fontWeight="bold"
-                    boxShadow={currentStep === step.id ? "0 0 0 4px rgba(66, 153, 225, 0.3)" : "none"}
-                    transition="all 0.3s"
+                    color={step.id <= currentStep ? stepTextActive : stepTextInactive}
                   >
                     {step.id}
-                  </Flex>
-                  <Text
-                    mt={2}
-                    fontSize={stepSizes}
-                    fontWeight={currentStep === step.id ? "semibold" : "normal"}
-                    color={currentStep >= step.id ? "blue.600" : "gray.500"}
-                    textAlign="center"
-                  >
-                    {step.label}
                   </Text>
-                </Flex>
-                
-                {/* Linha de conexão */}
-                {index < steps.length - 1 && (
-                  <Box 
-                    flex={1} 
-                    h="3px" 
-                    bg={currentStep > step.id ? "blue.500" : "gray.300"}
-                    transition="all 0.3s"
-                    position="relative"
-                    top={stepSizes === 'xs' ? "-18px" : stepSizes === 'sm' ? "-20px" : "-25px"}
-                    zIndex={1}
-                  />
-                )}
-              </React.Fragment>
+                </Box>
+                <Text
+                  fontSize={["xs", "sm"]}
+                  fontWeight={step.id === currentStep ? "bold" : "medium"}
+                  color={step.id <= currentStep ? "blue.500" : "gray.500"}
+                  textAlign="center"
+                  whiteSpace="nowrap"
+                >
+                  {step.label}
+                </Text>
+              </Box>
             ))}
           </HStack>
-        </Flex>
+        </Box>
+
+        <Divider mb={8} />
 
         {/* Conteúdo da etapa com animação */}
         <AnimatePresence mode="wait">

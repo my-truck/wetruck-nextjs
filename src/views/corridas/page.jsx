@@ -30,7 +30,7 @@ import { motion } from 'framer-motion';
 import { FiTruck, FiMapPin, FiCalendar, FiMessageCircle, FiDollarSign, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
 import axiosInstance from '../../axiosInstance';
 import AcceptButton from '../../components/menu/AcceptButton';
-// Importa o serviço de chat atualizado para iniciar a sala (passando o receiverId)
+// Importa o serviço de chat, que agora espera o id do frete para iniciar a sala
 import { startRoom } from '../admin/default/chat/services/chatService';
 
 const cardVariants = {
@@ -113,18 +113,17 @@ export default function FreteDetalhes() {
   const handleVoltarInicio = () => navigate('/admin/default');
   const handleVerMais = (freteId) => navigate(`/corridas/${freteId}`);
 
-  // Função para iniciar a sala de chat com o motorista
-  // Aqui, passamos o driverId para o endpoint, que irá utilizar esse valor como receiverId
-  const handleOpenChat = async (driverId) => {
+  // Função para iniciar a sala de chat utilizando o id do frete
+  const handleOpenChat = async (freightId) => {
     try {
-      // Armazena o id do motorista no localStorage
-      localStorage.setItem('driverId', driverId);
-      // Chama o endpoint para iniciar a sala, enviando o driverId como receiverId
-      const room = await startRoom(driverId);
+      // Armazena o id do frete no localStorage
+      localStorage.setItem('freightId', freightId.toString());
+      // Chama o endpoint para iniciar a sala, enviando o freight id
+      const room = await startRoom(freightId);
       // Armazena o id da sala para uso no chat
       localStorage.setItem('roomId', room.id);
-      // Redireciona para a página de chat com o motorista selecionado
-      navigate(`/admin/chat/${driverId}`);
+      // Redireciona para a página de chat utilizando o freight id
+      navigate(`/admin/chat/${freightId}`);
     } catch (error) {
       toast({
         title: 'Erro ao iniciar chat',
@@ -235,8 +234,8 @@ export default function FreteDetalhes() {
     const { label, color, icon } = getBadgeProps(frete);
     const podeAceitar = frete.paymentStatus === FRETE_STATUS.AUTHORIZED;
     const isPago = frete.paymentStatus === FRETE_STATUS.PAID;
-    // Utilize o campo userId para obter o id do motorista
-    const driverId = frete.userId;
+    // Utiliza o campo "id" do frete para iniciar o chat
+    const freightId = frete.id;
 
     const formattedDate = new Date(frete.created_at).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -373,7 +372,7 @@ export default function FreteDetalhes() {
             {isPago && (
               <Button
                 colorScheme="teal"
-                onClick={() => handleOpenChat(driverId)}
+                onClick={() => handleOpenChat(freightId)}
                 leftIcon={<FiMessageCircle />}
                 size="md"
               >
