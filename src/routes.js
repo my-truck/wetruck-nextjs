@@ -24,7 +24,8 @@ import AgendarDataHorario from './views/agendar/page';
 import CalculoValorFinal from './views/calculovalorfinal/page';
 import Profile from './views/perfil/page';
 import ConnectBankAccount from './views/connect-bank-account/ConnectBankAccount';
-import Corridas from './views/corridas/page'; // Importação da nova página de Corridas
+import Corridas from './views/corridas/page'; 
+import ChatPage from './views/admin/default/chat/page';
 
 // Configuração das Rotas
 const routes = [
@@ -34,12 +35,12 @@ const routes = [
     layout: '/admin',
     path: '/perfil',
     component: <Profile />,
-    sidebar: false, // Não exibe no sidebar
+    sidebar: false, 
   },
   {
     name: 'Conectar Conta Bancária',
     layout: '/admin',
-    path: '/connect-bank-account', // Rota para a página de conexão bancária
+    path: '/connect-bank-account', 
     component: <ConnectBankAccount />,
     sidebar: false,
   },
@@ -117,7 +118,15 @@ const routes = [
     path: '/corridas',
     icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />, // Ícone para Corridas
     component: <Corridas />,
-    sidebar: true, // Exibe no sidebar
+    sidebar: true, 
+  },
+
+  {
+    name: 'Chat',
+    layout: '/admin',
+    path: '/chat/:driverId', // rota que aceita um parâmetro :driverId
+    component: <ChatPage />,
+    sidebar: false, // ou true, se quiser no menu
   },
 
   // Rotas de Autenticação
