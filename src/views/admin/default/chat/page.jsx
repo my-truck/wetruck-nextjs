@@ -34,11 +34,9 @@ import {
   FiShield,
   FiArrowLeft,
   FiRefreshCw,
-  FiCheckCircle,
 } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-
-// Importa apenas o que será usado
+import io from 'socket.io-client';
 import { getConversation, sendMessage } from '../chat/services/chatService';
 
 const theme = {
@@ -54,33 +52,26 @@ const theme = {
 };
 
 function ChatPage() {
-  // Agora "id" na URL é o ID da SALA (ex.: /admin/chat/6)
-  const { id: paramRoomId, driverId } = useParams();
+  const { driverId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
 
-  // Exemplo de usuário logado
-  const userId = localStorage.getItem('userId') || '123';
+  // Corrigido para usar 'user_id' conforme salvo no Login.js
+  const userId = localStorage.getItem('user_id') || '123';
   const currentUser = {
     id: parseInt(userId, 10),
     name: 'Usuário Logado',
   };
 
-  // State do roomId (sala)
   const [roomId, setRoomId] = useState(null);
-
-  // Lista de mensagens e o campo de texto
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState('');
-
-  // Estados de loading e refresh
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Para scroll automático
   const messagesEndRef = useRef(null);
+  const socketRef = useRef(null);
 
-  // Informações de exibição sobre o motorista
   const driverInfo = {
     name: 'Motorista ' + (driverId || 'Desconhecido'),
     status: 'Em trânsito',
@@ -90,24 +81,73 @@ function ChatPage() {
     rating: 4.8,
   };
 
-  // 1) Pegamos o roomId da URL e validamos
+  // Configuração do WebSocket
   useEffect(() => {
-    // Se não houver o parâmetro, não exibe nenhum toast nem navega para trás
-    if (!paramRoomId) {
-      console.warn('Parâmetro "roomId" não informado.');
-      return;
-    }
-    const numericRoomId = parseInt(paramRoomId, 10);
-    if (!isNaN(numericRoomId) && numericRoomId > 0) {
-      setRoomId(numericRoomId);
-    } else {
-      console.error('ID da sala inválido.');
-      // Opcional: aqui você pode implementar outra lógica,
-      // mas o toast e o navigate foram removidos conforme solicitado.
-    }
-  }, [paramRoomId]);
+    const socket = io('https://etc.wetruckhub.com', {
+      query: { userId: currentUser.id },
+      transports: ['websocket'],
+    });
+    socketRef.current = socket;
 
-  // 2) Carrega as mensagens chamando GET /messages/conversation/:roomId
+    socket.on('connect', () => {
+      console.log('Conectado ao WebSocket com userId:', currentUser.id);
+    });
+
+    socket.on('message', (message) => {
+      console.log('Mensagem recebida via WebSocket:', message);
+      if (message.roomId === roomId) {
+        setMessages((prevMessages) => [...prevMessages, message]);
+      }
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Erro na conexão WebSocket:', error);
+      toast({
+        title: 'Erro no WebSocket',
+        description: 'Não foi possível conectar ao servidor de mensagens.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+      console.log('Desconectado do WebSocket');
+    };
+  }, [currentUser.id, roomId, toast]);
+
+  // Pegar o roomId do localStorage
+  useEffect(() => {
+    const storedRoomId = localStorage.getItem('roomId');
+    if (storedRoomId) {
+      const numericRoomId = parseInt(storedRoomId, 10);
+      if (!isNaN(numericRoomId) && numericRoomId > 0) {
+        setRoomId(numericRoomId);
+      } else {
+        console.error('ID da sala armazenado é inválido:', storedRoomId);
+        toast({
+          title: 'Erro na sala',
+          description: 'O ID da sala armazenado é inválido.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } else {
+      console.warn('Nenhum roomId encontrado no localStorage.');
+      toast({
+        title: 'Sala não encontrada',
+        description: 'Inicie uma sala antes de acessar o chat.',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate(-1);
+    }
+  }, [toast, navigate]);
+
+  // Carregar mensagens iniciais
   const loadConversation = async (rId) => {
     setIsRefreshing(true);
     try {
@@ -115,38 +155,39 @@ function ChatPage() {
       setMessages(data);
     } catch (error) {
       console.error('Erro ao carregar conversa:', error);
+      toast({
+        title: 'Erro ao carregar mensagens',
+        description: 'Não foi possível carregar a conversa.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setIsRefreshing(false);
     }
   };
 
-  // Assim que roomId for definido, carrega e atualiza a cada 15s
   useEffect(() => {
     if (roomId) {
       loadConversation(roomId);
-      const interval = setInterval(() => loadConversation(roomId), 15000);
-      return () => clearInterval(interval);
     }
   }, [roomId]);
 
-  // Scroll automático ao final das mensagens
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Formata um timestamp para HH:MM
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
     return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
 
-  // 3) Enviar mensagem => POST /messages/send { roomId, message }
   const handleSend = async () => {
     if (!newMsg.trim()) return;
     if (!roomId) {
       toast({
         title: 'Sala não iniciada',
-        description: 'Aguarde a inicialização da sala.',
+        description: 'Aguarde a inicialização da sala ou inicie uma nova.',
         status: 'warning',
         duration: 3000,
         isClosable: true,
@@ -157,8 +198,14 @@ function ChatPage() {
     setIsLoading(true);
     try {
       await sendMessage({ roomId, message: newMsg });
+      const newMessage = {
+        roomId,
+        senderId: currentUser.id,
+        body: newMsg,
+        createdAt: new Date(),
+      };
+      setMessages((prev) => [...prev, newMessage]); // Adiciona localmente
       setNewMsg('');
-      await loadConversation(roomId);
       toast({
         title: 'Mensagem enviada com sucesso',
         status: 'success',
@@ -180,24 +227,20 @@ function ChatPage() {
     }
   };
 
-  // Ao apertar Enter no campo, envia
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSend();
     }
   };
 
-  // Botão manual de refresh
   const handleRefresh = () => {
     if (roomId) loadConversation(roomId);
   };
 
-  // Voltar
   const handleGoBack = () => {
     navigate(-1);
   };
 
-  // Exemplo de animações framer
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i) => ({
@@ -210,6 +253,7 @@ function ChatPage() {
       },
     }),
   };
+
   const tabVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -223,7 +267,6 @@ function ChatPage() {
 
   return (
     <Container maxW="container.xl" py={5}>
-      {/* Cabeçalho */}
       <Flex mb={5} align="center">
         <IconButton
           icon={<FiArrowLeft />}
@@ -238,9 +281,7 @@ function ChatPage() {
         </Heading>
       </Flex>
 
-      {/* Layout principal */}
       <Grid templateColumns={{ base: '1fr', md: '350px 1fr' }} gap={6}>
-        {/* Painel Lateral */}
         <GridItem>
           <Box
             bg="white"
@@ -267,7 +308,7 @@ function ChatPage() {
                     {driverInfo.status}
                   </Badge>
                   <Text fontSize="sm" color="gray.500" ml={2}>
-                    Sala: {roomId}
+                    Sala: {roomId || 'Aguardando...'}
                   </Text>
                 </Flex>
               </Box>
@@ -319,7 +360,6 @@ function ChatPage() {
           </Box>
         </GridItem>
 
-        {/* Área de Chat */}
         <GridItem>
           <Box
             bg="white"
@@ -330,18 +370,7 @@ function ChatPage() {
             flexDirection="column"
             height="600px"
           >
-            {/* Cabeçalho do chat */}
             <Flex align="center" bg={theme.primary} color="white" p={4} position="relative">
-              <Box
-                position="absolute"
-                right="-20px"
-                top="-20px"
-                width="80px"
-                height="80px"
-                borderRadius="full"
-                bg={theme.accent}
-                opacity={0.3}
-              />
               <Icon as={FiMessageCircle} fontSize="24px" mr={3} />
               <Box flex="1">
                 <Heading size="md">Conversa com {driverInfo.name}</Heading>
@@ -361,7 +390,6 @@ function ChatPage() {
               />
             </Flex>
 
-            {/* Mensagens */}
             <Box
               p={4}
               flex="1"
@@ -396,8 +424,7 @@ function ChatPage() {
                   {messages.map((msg) => {
                     const isUser = Number(msg.senderId) === currentUser.id;
                     return (
-                      <Flex key={msg.id} justify={isUser ? 'flex-end' : 'flex-start'}>
-                        {/* Avatar do outro usuário */}
+                      <Flex key={msg.id || `${msg.createdAt}-${msg.body}`} justify={isUser ? 'flex-end' : 'flex-start'}>
                         {!isUser && (
                           <Avatar
                             size="sm"
@@ -407,8 +434,6 @@ function ChatPage() {
                             color="white"
                           />
                         )}
-
-                        {/* Bolha de mensagem */}
                         <Box
                           maxWidth="70%"
                           p={3}
@@ -418,7 +443,7 @@ function ChatPage() {
                           boxShadow="sm"
                           borderWidth={!isUser ? '1px' : '0'}
                         >
-                          <Text>{msg.message}</Text>
+                          <Text>{msg.body || msg.message}</Text>
                           <Flex
                             justify="flex-end"
                             fontSize="xs"
@@ -429,8 +454,6 @@ function ChatPage() {
                             <Text>{formatTime(msg.createdAt)}</Text>
                           </Flex>
                         </Box>
-
-                        {/* Avatar do usuário logado */}
                         {isUser && (
                           <Avatar
                             size="sm"
@@ -448,7 +471,6 @@ function ChatPage() {
               )}
             </Box>
 
-            {/* Input para nova mensagem */}
             <Box p={3} borderTop="1px solid" borderTopColor="gray.100">
               <InputGroup size="md">
                 <Input
