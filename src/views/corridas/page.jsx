@@ -3,7 +3,6 @@ import {
   Box,
   Text,
   Button,
-  VStack,
   HStack,
   Spinner,
   Tabs,
@@ -27,11 +26,19 @@ import {
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiTruck, FiMapPin, FiCalendar, FiMessageCircle, FiDollarSign, FiArrowLeft, FiCheckCircle } from 'react-icons/fi';
+import { FiTruck, FiMapPin, FiCalendar, FiMessageCircle, FiDollarSign, FiArrowLeft, FiCheckCircle, FiNavigation } from 'react-icons/fi';
 import axiosInstance from '../../axiosInstance';
 import AcceptButton from '../../components/menu/AcceptButton';
 // Importa o serviço de chat, que agora espera o id do frete para iniciar a sala
 import { startRoom } from '../admin/default/chat/services/chatService';
+
+// Define o objeto de status fora do componente para evitar recriação a cada render
+const FRETE_STATUS = {
+  AUTHORIZED: 'authorized',
+  PAID: 'paid',
+  ACCEPTED: 'accepted',
+  COMPLETED: 'completed',
+};
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -72,15 +79,8 @@ export default function FreteDetalhes() {
     concluidos: 0,
   });
 
-  // Usuário logado (exemplo)
+  // Exemplo de usuário logado
   const currentUser = { id: 123, name: 'Usuário Logado' };
-
-  // Enum para status do frete
-  const FRETE_STATUS = {
-    AUTHORIZED: 'authorized',
-    PAID: 'paid',
-    COMPLETED: 'completed',
-  };
 
   const fetchFreteData = useCallback(async () => {
     try {
@@ -95,7 +95,7 @@ export default function FreteDetalhes() {
       // Atualiza os contadores
       setContadores({
         pendentes: data.filter((f) => f.paymentStatus === FRETE_STATUS.AUTHORIZED).length,
-        confirmados: data.filter((f) => f.paymentStatus === FRETE_STATUS.PAID).length,
+        confirmados: data.filter((f) => f.paymentStatus === FRETE_STATUS.PAID || f.status === FRETE_STATUS.ACCEPTED).length,
         concluidos: data.filter((f) => f.status === FRETE_STATUS.COMPLETED).length,
       });
     } catch (err) {
@@ -104,7 +104,7 @@ export default function FreteDetalhes() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // FRETE_STATUS é constante e axiosInstance não muda
 
   useEffect(() => {
     fetchFreteData();
@@ -116,13 +116,9 @@ export default function FreteDetalhes() {
   // Função para iniciar a sala de chat utilizando o id do frete
   const handleOpenChat = async (freightId) => {
     try {
-      // Armazena o id do frete no localStorage
       localStorage.setItem('freightId', freightId.toString());
-      // Chama o endpoint para iniciar a sala, enviando o freight id
       const room = await startRoom(freightId);
-      // Armazena o id da sala para uso no chat
       localStorage.setItem('roomId', room.id);
-      // Redireciona para a página de chat utilizando o freight id
       navigate(`/admin/chat/${freightId}`);
     } catch (error) {
       toast({
@@ -144,7 +140,7 @@ export default function FreteDetalhes() {
         icon: FiTruck,
       };
     }
-    if (frete.paymentStatus === FRETE_STATUS.PAID) {
+    if (frete.paymentStatus === FRETE_STATUS.PAID || frete.status === FRETE_STATUS.ACCEPTED) {
       return { 
         label: 'Pedido Confirmado', 
         color: 'green',
@@ -233,8 +229,7 @@ export default function FreteDetalhes() {
   const FreteCard = ({ frete, index }) => {
     const { label, color, icon } = getBadgeProps(frete);
     const podeAceitar = frete.paymentStatus === FRETE_STATUS.AUTHORIZED;
-    const isPago = frete.paymentStatus === FRETE_STATUS.PAID;
-    // Utiliza o campo "id" do frete para iniciar o chat
+    const isPago = frete.paymentStatus === FRETE_STATUS.PAID || frete.status === FRETE_STATUS.ACCEPTED;
     const freightId = frete.id;
 
     const formattedDate = new Date(frete.created_at).toLocaleDateString('pt-BR', {
@@ -270,14 +265,13 @@ export default function FreteDetalhes() {
               </Text>
             </HStack>
             <Badge bg="white" color={`${color}.500`} px={3} py={1} borderRadius="full" fontSize="xs" fontWeight="bold">
-              R$ {parseFloat(frete.amount || 0).toFixed(2)}
+              R$ {parseFloat(frete.price || frete.amount || 0).toFixed(2)}
             </Badge>
           </Flex>
         </Box>
 
         {/* Conteúdo principal */}
         <Box p={6}>
-          {/* Título e data */}
           <Flex justify="space-between" align="center" mb={4}>
             <Heading size="md" color="gray.800">
               {frete.name || 'Frete sem nome'}
@@ -290,19 +284,46 @@ export default function FreteDetalhes() {
             </HStack>
           </Flex>
 
-          {/* Descrição */}
           {frete.description && (
             <Text fontSize="sm" color="gray.600" mb={4}>
               {frete.description}
             </Text>
           )}
 
+          {frete.driverName && (
+            <Flex align="center" mb={4} bg="gray.50" p={3} borderRadius="lg">
+              <Avatar 
+                size="md" 
+                name={frete.driverName} 
+                src={frete.driverProfileImage} 
+                mr={3}
+                border="2px solid"
+                borderColor="blue.200"
+              />
+              <Box>
+                <Text fontWeight="medium" fontSize="sm" color="gray.700">
+                  Motorista
+                </Text>
+                <Text fontSize="md" color="gray.800">
+                  {frete.driverName}
+                </Text>
+              </Box>
+            </Flex>
+          )}
+
           <Divider my={4} />
 
-          {/* Detalhes */}
-          <Flex direction={{ base: 'column', md: 'row' }} gap={4} mb={4}>
-            {/* Origem */}
-            <Box flex="1">
+          <Flex direction="column" gap={4} mb={4}>
+            {frete.distance && (
+              <Flex align="center" mb={2}>
+                <Icon as={FiNavigation} color="blue.500" boxSize={5} mr={2} />
+                <Text fontWeight="bold" fontSize="sm" color="gray.700">
+                  Distância: <Text as="span" fontWeight="normal" color="gray.600">{frete.distance}</Text>
+                </Text>
+              </Flex>
+            )}
+
+            <Box>
               <HStack spacing={2} mb={1}>
                 <Icon as={FiMapPin} color="orange.500" />
                 <Text fontWeight="bold" fontSize="sm" color="gray.700">
@@ -310,17 +331,12 @@ export default function FreteDetalhes() {
                 </Text>
               </HStack>
               <Text fontSize="sm" color="gray.600" ml={6}>
-                {frete.address?.street || 'N/A'}
-                {frete.address?.number ? `, ${frete.address.number}` : ''}
-              </Text>
-              <Text fontSize="sm" color="gray.500" ml={6}>
-                {frete.address?.city || 'N/A'}
-                {frete.address?.state ? ` - ${frete.address.state}` : ''}
+                {frete.origin || (frete.address?.street ? 
+                  `${frete.address.street}${frete.address.number ? `, ${frete.address.number}` : ''}` : 'N/A')}
               </Text>
             </Box>
 
-            {/* Destino */}
-            <Box flex="1">
+            <Box>
               <HStack spacing={2} mb={1}>
                 <Icon as={FiMapPin} color="blue.500" />
                 <Text fontWeight="bold" fontSize="sm" color="gray.700">
@@ -328,17 +344,12 @@ export default function FreteDetalhes() {
                 </Text>
               </HStack>
               <Text fontSize="sm" color="gray.600" ml={6}>
-                {frete.destinationAddress?.street || 'N/A'}
-                {frete.destinationAddress?.number ? `, ${frete.destinationAddress.number}` : ''}
-              </Text>
-              <Text fontSize="sm" color="gray.500" ml={6}>
-                {frete.destinationAddress?.city || 'N/A'}
-                {frete.destinationAddress?.state ? ` - ${frete.destinationAddress.state}` : ''}
+                {frete.destination || (frete.destinationAddress?.street ? 
+                  `${frete.destinationAddress.street}${frete.destinationAddress.number ? `, ${frete.destinationAddress.number}` : ''}` : 'N/A')}
               </Text>
             </Box>
           </Flex>
 
-          {/* Botões de ação */}
           <Flex gap={3} justify="flex-end" align="center" wrap="wrap" mt={4}>
             {podeAceitar && (
               <AcceptButton
@@ -347,7 +358,7 @@ export default function FreteDetalhes() {
                 onAccept={() => {
                   toast({
                     title: 'Frete Aceito',
-                    description: `Você aceitou o frete para ${frete.destinationAddress?.city || 'destino'}`,
+                    description: `Você aceitou o frete para ${frete.destination || (frete.destinationAddress?.city || 'destino')}`,
                     status: 'success',
                     duration: 4000,
                     isClosable: true,
@@ -449,7 +460,7 @@ export default function FreteDetalhes() {
 
   // Filtra as listas
   const fretesParaAceitar = fretes.filter((f) => f.paymentStatus === FRETE_STATUS.AUTHORIZED);
-  const fretesAceitos = fretes.filter((f) => f.paymentStatus === FRETE_STATUS.PAID);
+  const fretesAceitos = fretes.filter((f) => f.paymentStatus === FRETE_STATUS.PAID || f.status === FRETE_STATUS.ACCEPTED);
   const fretesConcluidos = fretes.filter((f) => f.status === FRETE_STATUS.COMPLETED);
 
   return (
