@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -23,8 +23,13 @@ import {
 import { 
   FaLock, 
   FaCreditCard, 
-  FaShieldAlt, 
-  FaCheckCircle 
+  FaShieldAlt,
+  FaCcVisa,
+  FaCcMastercard,
+  FaCcAmex,
+  FaCcDiscover,
+  FaCcDinersClub,
+  FaCcJcb,
 } from 'react-icons/fa';
 import {
   CardNumberElement,
@@ -34,23 +39,32 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
+const cardBrandIcons = {
+  visa: FaCcVisa,
+  mastercard: FaCcMastercard,
+  amex: FaCcAmex,
+  discover: FaCcDiscover,
+  diners: FaCcDinersClub,
+  jcb: FaCcJcb,
+  // Ícone padrão se necessário
+};
+
 const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
   const [paymentChoice, setPaymentChoice] = useState('saved');
   const [loading, setLoading] = useState(false);
+  const [cardLast4, setCardLast4] = useState('');
+  const [cardBrand, setCardBrand] = useState('');
 
   const stripe = useStripe();
   const elements = useElements();
 
-  // Color mode adaptations
+  // Adaptações de cores e responsividade
   const boxBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.300', 'gray.600');
   const accentColor = useColorModeValue('blue.600', 'blue.300');
-
-  // Responsive sizing
   const modalSize = useBreakpointValue({ base: 'sm', md: 'lg' });
+  const cardLast4Bg = useColorModeValue('gray.100', 'gray.600');
 
-
-  // Enhanced styling for Stripe elements
   const elementStyle = {
     base: {
       fontSize: '16px',
@@ -65,6 +79,27 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
       iconColor: '#E53E3E'
     }
   };
+
+  // Ao abrir a modal, busca os 4 últimos dígitos do cartão utilizando o token armazenado
+  useEffect(() => {
+    if (isOpen) {
+      const token = localStorage.getItem('authToken');
+      fetch('https://etc.wetruckhub.com/wallet/payment-method-last4', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.data && data.data.last4) {
+            setCardLast4(data.data.last4);
+          }
+        })
+        .catch((err) =>
+          console.error('Erro ao buscar últimos 4 dígitos:', err)
+        );
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -86,15 +121,16 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
         if (error) {
           throw error;
         }
-
+        // Chama handlePayment passando o id do payment method para novo método
         await handlePayment('new', paymentMethod.id);
       } else {
+        // Se usar cartão salvo, não envia paymentMethodId
         await handlePayment('saved');
       }
       onClose();
     } catch (error) {
       console.error('Erro de pagamento:', error);
-      // TODO: Implement user-friendly error handling
+      // TODO: Implementar tratamento de erro amigável para o usuário
     } finally {
       setLoading(false);
     }
@@ -109,8 +145,8 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
       scrollBehavior="inside"
     >
       <ModalOverlay 
-        bg='blackAlpha.300'
-        backdropFilter='blur(10px)'
+        bg="blackAlpha.300"
+        backdropFilter="blur(10px)"
       />
       <ModalContent 
         borderRadius="xl"
@@ -160,7 +196,21 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
                   >
                     <HStack>
                       <Text>Usar cartão salvo</Text>
-                      
+                      {cardLast4 && (
+                        <HStack spacing={1} ml={2}>
+                          <Icon as={FaCreditCard} boxSize={4} color="gray.500" />
+                          <Text 
+                            fontSize="sm" 
+                            color="gray.500" 
+                            bg={cardLast4Bg} 
+                            px={2} 
+                            py={1} 
+                            borderRadius="md"
+                          >
+                            Final {cardLast4}
+                          </Text>
+                        </HStack>
+                      )}
                     </HStack>
                   </Radio>
                   <Radio 
@@ -175,19 +225,21 @@ const PaymentOptionsModal = ({ isOpen, onClose, handlePayment }) => {
 
               {paymentChoice === 'new' && (
                 <VStack spacing={4} mt={4}>
-                  <Box 
-                    w="full" 
-                    border="1px solid" 
-                    borderColor={borderColor} 
-                    p={3} 
-                    borderRadius="md"
-                  >
+                  <Box position="relative" w="full" border="1px solid" borderColor={borderColor} p={3} borderRadius="md">
                     <CardNumberElement
                       options={{
                         placeholder: 'Número do Cartão',
                         style: elementStyle,
                       }}
+                      onChange={(e) => {
+                        if (e.brand) setCardBrand(e.brand);
+                      }}
                     />
+                    {cardBrand && (
+                      <Box position="absolute" right="8px" top="50%" transform="translateY(-50%)">
+                        <Icon as={cardBrandIcons[cardBrand] || FaCreditCard} boxSize={6} />
+                      </Box>
+                    )}
                   </Box>
                   <HStack w="full" spacing={3}>
                     <Box 

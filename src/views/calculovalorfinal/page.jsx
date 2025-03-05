@@ -17,7 +17,7 @@ import { FormContext } from '../../contexts/FormContext';
 import axios from '../../axiosInstance';
 import moment from 'moment-timezone';
 import CaminhaoModelo from '../../assets/images/caminhaomodelo.png';
-import PaymentOptionsModal from './PaymentOptionsModal'; // importe o componente separado
+import PaymentOptionsModal from './PaymentOptionsModal'; // componente de pagamento
 
 export default function CalculoValorFinal() {
   const { formData, updateFormData, resetFormData } = useContext(FormContext);
@@ -161,6 +161,7 @@ export default function CalculoValorFinal() {
       if (axleNumber === 1 || axleNumber === 2) {
         axleNumber = 2;
       }
+      // Se for um novo método, paymentMethodId estará preenchido; caso contrário, envia um objeto vazio.
       const pedidoBody = {
         workDetails: {
           origins: `${formData.origin.address}, ${formData.origin.city}, ${formData.origin.state}, ${formData.origin.postalCode}`,
@@ -169,11 +170,7 @@ export default function CalculoValorFinal() {
           axle: axleNumber,
         },
         paymentMethod: 'stripe',
-        paymentData: {
-          paymentMethodId: paymentMethodId || null,
-          savePaymentMethod:
-            formData.savePaymentMethod !== undefined ? formData.savePaymentMethod : true,
-        },
+        paymentData: paymentMethodId ? { paymentMethodId } : {},
         scheduleStart: moment(formData.scheduleStart)
           .tz('America/Sao_Paulo')
           .toISOString(),
