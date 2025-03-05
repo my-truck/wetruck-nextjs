@@ -86,12 +86,19 @@ function Login() {
         const data = response.data;
         const token = data.data.access_token;
         const userId = data.data.user_id;
+        // Ajuste para capturar o nome do usuário utilizando fallback
+        const fullName =
+          data.data.full_name ||
+          data.data.nomeCompleto ||
+          data.data.name ||
+          "Nome não informado";
 
         if (token && userId) {
           localStorage.setItem("authToken", token);
           localStorage.setItem("user_id", userId);
           console.log("Token recebido e armazenado:", token);
           console.log("User ID recebido e armazenado:", userId);
+          console.log("Nome completo recebido e armazenado:", fullName); // Log do nome completo
           navigate("/admin/default");
         } else {
           setError("Token ou User ID não recebido. Por favor, tente novamente.");

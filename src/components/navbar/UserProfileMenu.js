@@ -80,9 +80,9 @@ export default function UserProfileMenu({ userName }) {
             _hover={{ bg: 'none' }}
             borderRadius="8px"
             px="14px"
-            onClick={handleCorridasClick} // Adicionado o redirecionamento para Corridas
+            onClick={handleCorridasClick}
           >
-            <Text fontSize="sm">Corridas</Text> {/* Novo item para Corridas */}
+            <Text fontSize="sm">Corridas</Text>
           </MenuItem>
 
           <MenuItem

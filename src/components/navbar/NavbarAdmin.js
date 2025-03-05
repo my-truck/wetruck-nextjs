@@ -24,8 +24,15 @@ export default function AdminNavbar(props) {
   const [socketConnected, setSocketConnected] = useState(false);
   const toast = useToast();
 
+  // Obter o token e o nome do usuário a partir do token
+  const token = localStorage.getItem('authToken');
+  let userName = '';
+  if (token) {
+    const decoded = decodeJWT(token);
+    userName = decoded ? (decoded.full_name || decoded.userName || decoded.name || '') : '';
+  }
+
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
     const userId = localStorage.getItem('user_id');
 
     if (!token || !userId) {
@@ -109,7 +116,7 @@ export default function AdminNavbar(props) {
     return () => {
       socket.disconnect();
     };
-  }, [toast]);
+  }, [toast, token]);
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -187,7 +194,8 @@ export default function AdminNavbar(props) {
           ml={{ base: '0px', md: '24px' }}
           mt={{ base: '8px', md: '0' }}
         >
-          <UserProfileMenu userName="Matheus" />
+          {/* Aqui, o nome do usuário é passado dinamicamente */}
+          <UserProfileMenu userName={userName || 'Usuário'} />
         </Flex>
 
         <Flex
