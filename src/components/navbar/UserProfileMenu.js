@@ -20,6 +20,10 @@ export default function UserProfileMenu({ userName }) {
     navigate('/admin/corridas'); // Redireciona para a página de Corridas
   };
 
+  const handleMeusVeiculosClick = () => {
+    navigate('/admin/meusveiculos'); // Redireciona para a página de Meus Veículos
+  };
+
   return (
     <Menu>
       <MenuButton
@@ -83,6 +87,15 @@ export default function UserProfileMenu({ userName }) {
             onClick={handleCorridasClick}
           >
             <Text fontSize="sm">Corridas</Text>
+          </MenuItem>
+
+          <MenuItem
+            _hover={{ bg: 'none' }}
+            borderRadius="8px"
+            px="14px"
+            onClick={handleMeusVeiculosClick}
+          >
+            <Text fontSize="sm">Meus Veículos</Text>
           </MenuItem>
 
           <MenuItem

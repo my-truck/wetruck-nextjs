@@ -26,8 +26,9 @@ import Profile from './views/perfil/page';
 import ConnectBankAccount from './views/connect-bank-account/ConnectBankAccount';
 import Corridas from './views/corridas/page'; 
 import ChatPage from './views/admin/default/chat/page';
+// Importação da nova rota Meus Veículos
+import MeusVeiculos from './views/meusveiculos/page';
 
-// Configuração das Rotas
 const routes = [
   // Rotas do Painel de Admin
   {
@@ -116,11 +117,10 @@ const routes = [
     name: 'Corridas', // Nova rota para Corridas
     layout: '/admin',
     path: '/corridas',
-    icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />, // Ícone para Corridas
+    icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />,
     component: <Corridas />,
     sidebar: true, 
   },
-
   {
     name: 'Chat',
     layout: '/admin',
@@ -128,7 +128,14 @@ const routes = [
     component: <ChatPage />,
     sidebar: false, 
   },
-
+  {
+    name: 'Meus Veículos', // Nova rota para Meus Veículos
+    layout: '/admin',
+    path: '/meusveiculos',
+    icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />,
+    component: <MeusVeiculos />,
+    sidebar: true,
+  },
   // Rotas de Autenticação
   {
     name: 'Login',
