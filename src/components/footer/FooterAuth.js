@@ -36,7 +36,7 @@ export default function Footer() {
         {" "}
         &copy; {1900 + new Date().getYear()}
         <Text as='span' fontWeight='500' ms='4px'>
-        Help4u. Todos os Direitos Reservados.
+        Wetruck. Todos os Direitos Reservados.
          
         </Text>
       </Text>
