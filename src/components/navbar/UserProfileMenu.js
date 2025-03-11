@@ -100,14 +100,6 @@ export default function UserProfileMenu({ userName }) {
 
           <MenuItem
             _hover={{ bg: 'none' }}
-            borderRadius="8px"
-            px="14px"
-          >
-            <Text fontSize="sm">Configurações da Newsletter</Text>
-          </MenuItem>
-
-          <MenuItem
-            _hover={{ bg: 'none' }}
             color="red.400"
             borderRadius="8px"
             px="14px"
