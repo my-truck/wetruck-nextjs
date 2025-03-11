@@ -1,3 +1,5 @@
+// src/components/navbar/AdminNavbar.js
+
 import { Box, Flex, Image, useToast } from '@chakra-ui/react';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
@@ -29,12 +31,14 @@ export default function AdminNavbar(props) {
   let userName = '';
   if (token) {
     const decoded = decodeJWT(token);
-    userName = decoded ? (decoded.full_name || decoded.userName || decoded.name || '') : '';
+    userName = decoded
+      ? decoded.full_name || decoded.userName || decoded.name || ''
+      : '';
   }
 
+  // Conexão via socket e validações
   useEffect(() => {
     const userId = localStorage.getItem('user_id');
-
     if (!token || !userId) {
       toast({
         title: 'Erro de Autenticação',
@@ -49,7 +53,6 @@ export default function AdminNavbar(props) {
 
     const decoded = decodeJWT(token);
     const currentTime = Math.floor(Date.now() / 1000);
-
     if (decoded?.exp < currentTime) {
       toast({
         title: 'Sessão Expirada',
@@ -93,7 +96,9 @@ export default function AdminNavbar(props) {
       setNotifications((prev) => [...prev, notification]);
       toast({
         title: 'Nova Ordem',
-        description: `Você recebeu uma nova ordem de ${notification.name || 'um Motorista'}.`,
+        description: `Você recebeu uma nova ordem de ${
+          notification.name || 'um Motorista'
+        }.`,
         status: 'info',
         duration: 5000,
         isClosable: true,
@@ -118,17 +123,18 @@ export default function AdminNavbar(props) {
     };
   }, [toast, token]);
 
+  // Busca notificações iniciais
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const response = await axiosInstance.get('/work/get-notifications');
         if (response.data?.data) {
-          const formattedNotifications = response.data.data.map((notif) => ({
+          const formatted = response.data.data.map((notif) => ({
             ...notif,
             id: notif.orderId,
             name: notif.userName || notif.name,
           }));
-          setNotifications(formattedNotifications);
+          setNotifications(formatted);
         }
       } catch (error) {
         toast({
@@ -143,12 +149,14 @@ export default function AdminNavbar(props) {
     fetchNotifications();
   }, [toast]);
 
+  // Controla o scroll
   useEffect(() => {
     const changeNavbar = () => setScrolled(window.scrollY > 1);
     window.addEventListener('scroll', changeNavbar);
     return () => window.removeEventListener('scroll', changeNavbar);
   }, []);
 
+  // Estilos do Navbar
   const navbarPosition = 'fixed';
   const navbarHeight = '80px';
   const navbarBg = scrolled
@@ -172,47 +180,34 @@ export default function AdminNavbar(props) {
       <Flex
         w="100%"
         h="100%"
-        alignItems="center"
-        justifyContent="space-between"
+        align="center"
         px={{ base: '16px', md: '40px' }}
+        justify="space-between"
       >
-        {/* Logo da Marca com Link */}
-        <Link to="/admin/default">
-          <Image
-            src={LogoWeTruck}
-            alt="WeTruck Logo"
-            height={{ base: '40px', md: '60px' }}
-            mr="24px"
-            cursor="pointer"
-          />
-        </Link>
-
-        {/* Menu de Perfil (Mobile e Desktop) */}
-        <Flex
-          alignItems="center"
-          justifyContent="center"
-          ml={{ base: '0px', md: '24px' }}
-          mt={{ base: '8px', md: '0' }}
-        >
-          {/* Aqui, o nome do usuário é passado dinamicamente */}
+        {/* Logo + Perfil (lado esquerdo) */}
+        <Flex align="center" gap={{ base: '12px', md: '16px' }}>
+          <Link to="/admin/default">
+            <Image
+              src={LogoWeTruck}
+              alt="WeTruck Logo"
+              height={{ base: '40px', md: '60px' }}
+              cursor="pointer"
+            />
+          </Link>
+          {/* Menu de Perfil do Usuário após a logo */}
           <UserProfileMenu userName={userName || 'Usuário'} />
         </Flex>
 
-        <Flex
-          ml="auto"
-          alignItems="center"
-          gap={{ base: '24px', md: '32px' }}
-        >
-          <AdminNavbarLinks
-            onOpen={props.onOpen}
-            secondary={props.secondary}
-            fixed={props.fixed}
-            scrolled={scrolled}
-            notifications={notifications}
-            socketConnected={socketConnected}
-            setNotifications={setNotifications}
-          />
-        </Flex>
+        {/* Admin Links (Chat, Notificações) no lado direito */}
+        <AdminNavbarLinks
+          onOpen={props.onOpen}
+          secondary={props.secondary}
+          fixed={props.fixed}
+          scrolled={scrolled}
+          notifications={notifications}
+          socketConnected={socketConnected}
+          setNotifications={setNotifications}
+        />
       </Flex>
     </Box>
   );
