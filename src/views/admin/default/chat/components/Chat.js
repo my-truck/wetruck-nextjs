@@ -1,5 +1,6 @@
 // src/chat/components/Chat.js
 import React, { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { startRoom, getConversation, sendMessage } from '../services/chatService';
 import {
   Box,
@@ -18,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { FiSend, FiTruck, FiMessageCircle, FiUser, FiClock } from 'react-icons/fi';
 
-// Tema personalizado de cores para logística e segurança
+// Tema personalizado de cores
 const theme = {
   primary: '#FF6B00',     // Laranja principal vibrante
   secondary: '#FF8C38',   // Laranja secundário
@@ -29,30 +30,39 @@ const theme = {
   success: '#27AE60',     // Verde para confirmações
 };
 
-function Chat({ currentUser, receiverId, onClose }) {
+function Chat({ currentUser, onClose }) {
+  // Pega o freightId da rota: /admin/chat/:freightId
+  const { freightId } = useParams();
+  const navigate = useNavigate();
+
   const [roomId, setRoomId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   const messagesEndRef = useRef(null);
   const toast = useToast();
 
+  // 1) Monta: verifica se já existe "roomId" no localStorage;
+  //    se não existir, chama o startRoom(freightId) para criar a sala.
   useEffect(() => {
-    // Ao montar, inicia ou recupera a sala
-    (async () => {
+    const initRoom = async () => {
       setIsLoading(true);
       try {
-        // Tenta pegar do localStorage
         const storedRoomId = localStorage.getItem('roomId');
+
         if (storedRoomId) {
+          // Se já existe, usamos esse
           setRoomId(parseInt(storedRoomId, 10));
         } else {
-          // Se não existir, chama startRoom no backend
-          const room = await startRoom();
+          // Caso o usuário acesse /admin/chat/:freightId diretamente,
+          // podemos iniciar a sala aqui:
+          const room = await startRoom(freightId);
           setRoomId(room.id);
           localStorage.setItem('roomId', room.id);
         }
       } catch (error) {
+        console.error(error);
         toast({
           title: 'Erro ao conectar',
           description: 'Não foi possível iniciar o chat.',
@@ -60,25 +70,28 @@ function Chat({ currentUser, receiverId, onClose }) {
           duration: 3000,
           isClosable: true,
         });
+        // Opcional: podemos navegar de volta caso dê erro
+        navigate('/admin/default');
       } finally {
         setIsLoading(false);
       }
-    })();
-  }, [toast]);
+    };
 
+    initRoom();
+  }, [freightId, toast, navigate]);
+
+  // 2) Assim que tiver o roomId, busca as mensagens
   useEffect(() => {
-    // Assim que tiver roomId, busca mensagens
     if (roomId) {
       loadConversation(roomId);
-      
-      // Configurar atualização periódica a cada 10 segundos
+      // Configurar atualização periódica a cada 10s, se desejar
       const interval = setInterval(() => loadConversation(roomId), 10000);
       return () => clearInterval(interval);
     }
   }, [roomId]);
 
+  // Rola para a mensagem mais recente quando mensagens são atualizadas
   useEffect(() => {
-    // Rola para a mensagem mais recente quando mensagens são atualizadas
     scrollToBottom();
   }, [messages]);
 
@@ -95,21 +108,23 @@ function Chat({ currentUser, receiverId, onClose }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 3) Envio de mensagem - repare que não passamos receiverId,
+  //    pois seu serviço só precisa de { roomId, message }.
   const handleSend = async () => {
     if (!newMsg.trim()) return;
-    
+    if (!roomId) return;
+
     setIsLoading(true);
     try {
       await sendMessage({
-        roomId,
-        receiverId,
+        roomId, // O id da sala
         message: newMsg,
       });
-      
+
       setNewMsg('');
-      // Recarrega conversa
+      // Recarrega as mensagens
       await loadConversation(roomId);
-      
+
       toast({
         title: 'Mensagem enviada',
         status: 'success',
@@ -118,6 +133,7 @@ function Chat({ currentUser, receiverId, onClose }) {
         position: 'top-right',
       });
     } catch (error) {
+      console.error(error);
       toast({
         title: 'Falha ao enviar',
         description: 'Tente novamente em instantes.',
@@ -136,51 +152,53 @@ function Chat({ currentUser, receiverId, onClose }) {
     }
   };
 
+  // Exemplo simples de formatação de hora
   const formatTime = () => {
     const now = new Date();
     return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
   };
 
   return (
-    <Box 
-      p={4} 
-      bg="white" 
-      boxShadow="md" 
-      borderRadius="lg" 
-      maxW="600px" 
+    <Box
+      p={4}
+      bg="white"
+      boxShadow="md"
+      borderRadius="lg"
+      maxW="600px"
       width="100%"
+      mx="auto"
     >
       {/* Cabeçalho do Chat */}
-      <Flex 
-        align="center" 
-        bg={theme.primary} 
-        color="white" 
-        p={3} 
-        borderRadius="md" 
+      <Flex
+        align="center"
+        bg={theme.primary}
+        color="white"
+        p={3}
+        borderRadius="md"
         mb={4}
         position="relative"
         overflow="hidden"
       >
-        <Box 
-          position="absolute" 
-          right="-20px" 
-          top="-20px" 
-          width="80px" 
-          height="80px" 
-          borderRadius="full" 
-          bg={theme.accent} 
-          opacity={0.3} 
+        <Box
+          position="absolute"
+          right="-20px"
+          top="-20px"
+          width="80px"
+          height="80px"
+          borderRadius="full"
+          bg={theme.accent}
+          opacity={0.3}
         />
-        
         <Icon as={FiTruck} fontSize="24px" mr={3} />
         <Box flex="1">
           <Heading size="md">Chat com Motorista</Heading>
           <Flex align="center" fontSize="sm">
-            <Text>ID: {receiverId}</Text>
-            <Badge 
-              ml={2} 
-              colorScheme="green" 
-              borderRadius="full" 
+            {/* Exemplo: usando freightId como ID */}
+            <Text>ID Frete: {freightId}</Text>
+            <Badge
+              ml={2}
+              colorScheme="green"
+              borderRadius="full"
               px={2}
             >
               Online
@@ -209,11 +227,11 @@ function Chat({ currentUser, receiverId, onClose }) {
         }}
       >
         {messages.length === 0 ? (
-          <Flex 
-            height="100%" 
-            justify="center" 
-            align="center" 
-            direction="column" 
+          <Flex
+            height="100%"
+            justify="center"
+            align="center"
+            direction="column"
             color="gray.500"
           >
             <Icon as={FiMessageCircle} fontSize="40px" mb={2} color={theme.accent} />
@@ -222,22 +240,23 @@ function Chat({ currentUser, receiverId, onClose }) {
         ) : (
           <VStack align="stretch" spacing={3}>
             {messages.map((msg) => {
-              const isUser = msg.senderId === currentUser.id;
+              const isUser = msg.senderId === currentUser?.id;
               return (
-                <Flex 
-                  key={msg.id} 
-                  justify={isUser ? "flex-end" : "flex-start"}
+                <Flex
+                  key={msg.id}
+                  justify={isUser ? 'flex-end' : 'flex-start'}
                 >
+                  {/* Se não for o usuário logado, mostra o avatar do motorista */}
                   {!isUser && (
-                    <Avatar 
-                      size="sm" 
-                      icon={<Icon as={FiTruck} />} 
-                      mr={2} 
+                    <Avatar
+                      size="sm"
+                      icon={<Icon as={FiTruck} />}
+                      mr={2}
                       bg={theme.dark}
                       color="white"
                     />
                   )}
-                  
+
                   <Box
                     maxWidth="70%"
                     p={3}
@@ -245,20 +264,26 @@ function Chat({ currentUser, receiverId, onClose }) {
                     bg={isUser ? theme.primary : 'white'}
                     color={isUser ? 'white' : theme.text}
                     boxShadow="sm"
-                    borderWidth={!isUser ? "1px" : "0"}
+                    borderWidth={!isUser ? '1px' : '0'}
                   >
                     <Text fontSize="sm">{msg.message}</Text>
-                    <Flex justify="flex-end" fontSize="xs" color={isUser ? "whiteAlpha.800" : "gray.500"} mt={1}>
+                    <Flex
+                      justify="flex-end"
+                      fontSize="xs"
+                      color={isUser ? 'whiteAlpha.800' : 'gray.500'}
+                      mt={1}
+                    >
                       <Icon as={FiClock} mr={1} />
                       <Text>{formatTime()}</Text>
                     </Flex>
                   </Box>
-                  
+
+                  {/* Se for o usuário logado, mostra o avatar do usuário */}
                   {isUser && (
-                    <Avatar 
-                      size="sm" 
-                      icon={<Icon as={FiUser} />} 
-                      ml={2} 
+                    <Avatar
+                      size="sm"
+                      icon={<Icon as={FiUser} />}
+                      ml={2}
                       bg={theme.secondary}
                       color="white"
                     />
@@ -282,6 +307,7 @@ function Chat({ currentUser, receiverId, onClose }) {
           borderColor={theme.accent}
           _focus={{ borderColor: theme.primary }}
           bg="white"
+          disabled={!roomId} // Caso ainda não exista roomId
         />
         <InputRightElement width="4.5rem">
           <Button
@@ -293,6 +319,7 @@ function Chat({ currentUser, receiverId, onClose }) {
             onClick={handleSend}
             isLoading={isLoading}
             leftIcon={<Icon as={FiSend} />}
+            disabled={!roomId}
           >
             Enviar
           </Button>

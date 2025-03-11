@@ -6,6 +6,8 @@ import {
   MdDirectionsCar,
   MdLocalShipping,
   MdDateRange,
+  // Adicione o ícone que desejar (ex. MdChat, MdMessage, etc.)
+  MdChat,
 } from 'react-icons/md';
 
 // Importação das Páginas
@@ -26,8 +28,13 @@ import Profile from './views/perfil/page';
 import ConnectBankAccount from './views/connect-bank-account/ConnectBankAccount';
 import Corridas from './views/corridas/page'; 
 import ChatPage from './views/admin/default/chat/page';
+
 // Importação da nova rota Meus Veículos
 import MeusVeiculos from './views/meusveiculos/page';
+
+// (Exemplo) import da página que lista as conversas ativas.
+// Ajuste conforme o local em que você criou esse componente.
+import ActiveChatsPage from './views/admin/default/chat/components/ActiveChats';
 
 const routes = [
   // Rotas do Painel de Admin
@@ -114,7 +121,7 @@ const routes = [
     sidebar: false,
   },
   {
-    name: 'Corridas', // Nova rota para Corridas
+    name: 'Corridas',
     layout: '/admin',
     path: '/corridas',
     icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />,
@@ -129,13 +136,25 @@ const routes = [
     sidebar: false, 
   },
   {
-    name: 'Meus Veículos', // Nova rota para Meus Veículos
+    name: 'Meus Veículos',
     layout: '/admin',
     path: '/meusveiculos',
     icon: <Icon as={MdDirectionsCar} width="20px" height="20px" color="inherit" />,
     component: <MeusVeiculos />,
     sidebar: true,
   },
+
+  // *** Nova rota para listar conversas ativas ***
+  {
+    name: 'Conversas Ativas',
+    layout: '/admin',
+    path: '/active-chats',
+    icon: <Icon as={MdChat} width="20px" height="20px" color="inherit" />,
+    component: <ActiveChatsPage />,
+    sidebar: true,
+  },
+  // Fim da nova rota
+
   // Rotas de Autenticação
   {
     name: 'Login',
