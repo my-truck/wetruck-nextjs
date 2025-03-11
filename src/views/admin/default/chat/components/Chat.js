@@ -1,4 +1,3 @@
-// src/chat/components/Chat.js
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { startRoom, getConversation, sendMessage } from '../services/chatService';
@@ -15,9 +14,8 @@ import {
   Avatar,
   VStack,
   useToast,
-  Heading,
 } from '@chakra-ui/react';
-import { FiSend, FiTruck, FiMessageCircle, FiUser, FiClock } from 'react-icons/fi';
+import { FiSend, FiMessageCircle, FiUser, FiClock } from 'react-icons/fi';
 
 // Tema personalizado de cores
 const theme = {
@@ -164,56 +162,38 @@ function Chat({ currentUser, onClose }) {
       bg="white"
       boxShadow="md"
       borderRadius="lg"
-      maxW="600px"
+      maxW="800px"
       width="100%"
       mx="auto"
+      height="calc(100vh - 120px)"
+      display="flex"
+      flexDirection="column"
     >
-      {/* Cabeçalho do Chat */}
+      {/* Cabeçalho Simplificado */}
       <Flex
         align="center"
+        justify="space-between"
         bg={theme.primary}
         color="white"
-        p={3}
+        p={2}
         borderRadius="md"
-        mb={4}
-        position="relative"
-        overflow="hidden"
+        mb={2}
       >
-        <Box
-          position="absolute"
-          right="-20px"
-          top="-20px"
-          width="80px"
-          height="80px"
-          borderRadius="full"
-          bg={theme.accent}
-          opacity={0.3}
-        />
-        <Icon as={FiTruck} fontSize="24px" mr={3} />
-        <Box flex="1">
-          <Heading size="md">Chat com Motorista</Heading>
-          <Flex align="center" fontSize="sm">
-            {/* Exemplo: usando freightId como ID */}
-            <Text>ID Frete: {freightId}</Text>
-            <Badge
-              ml={2}
-              colorScheme="green"
-              borderRadius="full"
-              px={2}
-            >
-              Online
-            </Badge>
-          </Flex>
-        </Box>
+        <Flex align="center">
+          <Text fontWeight="bold" ml={2}>Sala: {roomId || freightId}</Text>
+        </Flex>
+        <Badge colorScheme="green" borderRadius="full" px={2}>
+          Online
+        </Badge>
       </Flex>
 
-      {/* Área de Mensagens */}
+      {/* Área de Mensagens - Agora com altura flexível para ocupar espaço disponível */}
       <Box
         borderWidth="1px"
         borderRadius="md"
         p={3}
-        mb={4}
-        height="300px"
+        mb={3}
+        flex="1"
         overflowY="auto"
         bg={theme.background}
         css={{
@@ -235,7 +215,7 @@ function Chat({ currentUser, onClose }) {
             color="gray.500"
           >
             <Icon as={FiMessageCircle} fontSize="40px" mb={2} color={theme.accent} />
-            <Text>Inicie uma conversa com o motorista</Text>
+            <Text>Inicie uma conversa</Text>
           </Flex>
         ) : (
           <VStack align="stretch" spacing={3}>
@@ -250,7 +230,6 @@ function Chat({ currentUser, onClose }) {
                   {!isUser && (
                     <Avatar
                       size="sm"
-                      icon={<Icon as={FiTruck} />}
                       mr={2}
                       bg={theme.dark}
                       color="white"
@@ -331,12 +310,11 @@ function Chat({ currentUser, onClose }) {
         <Button
           variant="outline"
           onClick={onClose}
-          mt={3}
+          mt={2}
           borderColor={theme.accent}
           color={theme.primary}
           _hover={{ bg: theme.background }}
           size="sm"
-          width="full"
         >
           Fechar Chat
         </Button>
