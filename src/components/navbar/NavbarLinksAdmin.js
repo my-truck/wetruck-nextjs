@@ -13,14 +13,11 @@ import {
   IconButton,
   Divider,
 } from '@chakra-ui/react';
-import { MdNotificationsNone, MdInfoOutline } from 'react-icons/md';
+import { MdNotificationsNone } from 'react-icons/md';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom'; // Hook para navegação
 import { ItemContent } from '../../components/menu/ItemContent';
-import LogoutButton from './LogoutButton';
 
 export default function NavbarLinksAdmin({ notifications = [], socketConnected, setNotifications, fetchNotifications }) {
-  const navigate = useNavigate(); // Hook para navegação
   const textColor = useColorModeValue('gray.700', 'whiteAlpha.900');
   const shadow = useColorModeValue(
     '0px 4px 12px rgba(0, 0, 0, 0.1)',
@@ -121,47 +118,6 @@ export default function NavbarLinksAdmin({ notifications = [], socketConnected, 
                 </MenuItem>
               </>
             )}
-          </Flex>
-        </MenuList>
-      </Menu>
-
-      {/* Informações e Configurações */}
-      <Menu>
-        <MenuButton
-          as={IconButton}
-          p="0px"
-          aria-label="Informações"
-          icon={<MdInfoOutline />}
-          variant="ghost"
-          size="lg"
-          _hover={{ bg: 'gray.100' }}
-        />
-        <MenuList
-          boxShadow={shadow}
-          p="16px"
-          borderRadius="lg"
-          mt="14px"
-          bg={useColorModeValue('white', 'gray.800')}
-          mx={{ base: 'auto', md: '0' }}
-        >
-          <Flex flexDirection="column" p="8px">
-            <MenuItem
-              onClick={() => navigate('/admin/perfil')} // Certifique-se de que o caminho está correto
-              _hover={{ bg: 'gray.100', color: 'blue.500' }}
-              borderRadius="md"
-              px="12px"
-            >
-              <Text fontSize="sm" color={textColor}>
-                Perfil
-              </Text>
-            </MenuItem>
-            <MenuItem
-              _hover={{ bg: 'red.100', color: 'red.500' }}
-              borderRadius="md"
-              px="12px"
-            >
-              <LogoutButton />
-            </MenuItem>
           </Flex>
         </MenuList>
       </Menu>
