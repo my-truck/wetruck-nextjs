@@ -1,6 +1,9 @@
 // src/components/auth/Login.js
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
+// Se a versão de jwt-decode for mais antiga e tiver export default, use: import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import {
   Box,
   Button,
@@ -84,9 +87,11 @@ function Login() {
 
       if (response.status === 200 || response.status === 201) {
         const data = response.data;
+        // Token e UserID retornados pela API
         const token = data.data.access_token;
         const userId = data.data.user_id;
-        // Ajuste para capturar o nome do usuário utilizando fallback
+
+        // Fallback para o nome do usuário
         const fullName =
           data.data.full_name ||
           data.data.nomeCompleto ||
@@ -94,11 +99,45 @@ function Login() {
           "Nome não informado";
 
         if (token && userId) {
+          // Armazena token e userId
           localStorage.setItem("authToken", token);
           localStorage.setItem("user_id", userId);
+
+          // Decodifica o token e armazena o payload completo no localStorage
+          try {
+            const decoded = jwtDecode(token);
+            localStorage.setItem("tokenPayload", JSON.stringify(decoded));
+
+            // Log do payload completo
+            console.log("Payload decodificado:", decoded);
+
+            // Se houver campo 'role' ou outro no payload, basta acessar:
+            console.log("Role do usuário (se existir):", decoded.role || "Sem role no token");
+
+            // Caso queira salvar no localStorage também
+            if (decoded.role) {
+              localStorage.setItem("userRole", decoded.role);
+            }
+
+            // Se quiser salvar campos específicos do token, por exemplo email e name
+            if (decoded.email) {
+              localStorage.setItem("userEmail", decoded.email);
+            }
+            if (decoded.name) {
+              localStorage.setItem("userName", decoded.name);
+            }
+          } catch (decodeError) {
+            console.error("Erro ao decodificar token:", decodeError);
+          }
+
+          // Armazena também o fullName
+          localStorage.setItem("userFullName", fullName);
+
           console.log("Token recebido e armazenado:", token);
           console.log("User ID recebido e armazenado:", userId);
-          console.log("Nome completo recebido e armazenado:", fullName); // Log do nome completo
+          console.log("Nome completo recebido e armazenado:", fullName);
+
+          // Redireciona para a página que você desejar
           navigate("/admin/default");
         } else {
           setError("Token ou User ID não recebido. Por favor, tente novamente.");
@@ -146,12 +185,14 @@ function Login() {
           <Text color={textColorDetails} fontSize="md" ms="4px" mb="36px">
             Insira suas credenciais para acessar o painel.
           </Text>
+
           {error && (
             <Alert status="error" mb="20px">
               <AlertIcon />
               {error}
             </Alert>
           )}
+
           <form onSubmit={handleSubmit}>
             <FormControl mb="24px">
               <FormLabel ms="4px" fontSize="sm" fontWeight="500" htmlFor="email">
@@ -171,6 +212,7 @@ function Login() {
                 _focus={{ borderColor: "blue.500", boxShadow: "0 0 0 1px blue.500" }}
               />
             </FormControl>
+
             <FormControl mb="24px">
               <FormLabel ms="4px" fontSize="sm" fontWeight="500" htmlFor="password">
                 Senha
