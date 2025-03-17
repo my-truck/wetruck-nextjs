@@ -28,6 +28,7 @@ import Profile from './views/perfil/page';
 import ConnectBankAccount from './views/connect-bank-account/ConnectBankAccount';
 import Corridas from './views/corridas/page'; 
 import ChatPage from './views/admin/default/chat/page';
+import FinalizarEtapas from './views/admin/default/finalizar-etapas/page';
 
 // Importação da nova rota Meus Veículos
 import MeusVeiculos from './views/meusveiculos/page';
@@ -45,6 +46,15 @@ const routes = [
     component: <Profile />,
     sidebar: false, 
   },
+
+  {
+    name: 'Finalizar Etapas',
+    layout: '/admin',
+    path: '/finalizar-etapas',
+    component: <FinalizarEtapas />,
+    sidebar: false, 
+  },
+
   {
     name: 'Conectar Conta Bancária',
     layout: '/admin',
