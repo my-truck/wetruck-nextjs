@@ -39,7 +39,7 @@ import {
 import axiosInstance from '../../axiosInstance';
 
 export default function Profile() {
-  // Theme-dependent values
+  // Theme-dependent values - defined BEFORE any conditional returns
   const bg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.800', 'whiteAlpha.900');
@@ -50,7 +50,6 @@ export default function Profile() {
   const headerBg = useColorModeValue('blue.700', 'blue.900');
   
   const [profile, setProfile] = useState({
-    role: '',
     firstName: '',
     lastName: '',
     gender: '',
@@ -88,8 +87,8 @@ export default function Profile() {
 
   // Função para formatar o CPF enquanto o usuário digita
   const handleCPFChange = (e) => {
-    let value = e.target.value.replace(/[^\d]/g, '');
-    value = value.slice(0, 11);
+    let value = e.target.value.replace(/[^\d]/g, ''); // Permite apenas números
+    value = value.slice(0, 11); // Limita a 11 caracteres (sem formatação)
     const formattedValue = formatCPF(value);
     setProfile((prev) => ({
       ...prev,
@@ -118,6 +117,7 @@ export default function Profile() {
     if (file) setImageDocument(file);
   };
 
+  // Usando a lib react-dropzone
   const {
     getRootProps: getProfileRootProps,
     getInputProps: getProfileInputProps,
@@ -150,7 +150,6 @@ export default function Profile() {
         if (data) {
           setProfile((prev) => ({
             ...prev,
-            role: data.role || 'CUSTOMER',
             firstName: data.firstName || '',
             lastName: data.lastName || '',
             gender: data.gender || '',
@@ -180,7 +179,6 @@ export default function Profile() {
         });
         setIsLoading(false);
         setProfile({
-          role: 'CUSTOMER',
           firstName: '',
           lastName: '',
           gender: '',
@@ -234,10 +232,11 @@ export default function Profile() {
       formData.append('lastName', profile.lastName);
       formData.append('gender', profile.gender);
       formData.append('email', profile.email);
-      formData.append('role', profile.role); // Se precisar enviar a role
 
-      // Processa o CPF (remover pontuação)
+      // Processa o CPF para remover formatação (pontos e hífen)
       const cpfRaw = profile.driverDocument.cpf.replace(/\D/g, '');
+
+      // Cria um novo objeto driverDocument com o CPF processado
       const driverDocumentProcessed = {
         ...profile.driverDocument,
         cpf: cpfRaw,
@@ -246,17 +245,15 @@ export default function Profile() {
       // Adiciona o driverDocument como JSON
       formData.append('driverDocument', JSON.stringify(driverDocumentProcessed));
 
-      // Anexa sempre a foto de perfil, se existir
+      // Só adiciona arquivos se existirem
       if (imageProfile) {
         formData.append('imageProfile', imageProfile, imageProfile.name || 'profile.jpg');
       }
-
-      // Anexa o documento apenas se a role for DRIVER
-      if (profile.role === 'DRIVER' && imageDocument) {
+      if (imageDocument) {
         formData.append('imageDocument', imageDocument, imageDocument.name || 'document.jpg');
       }
 
-      // Faz a requisição PUT
+      // Faz a requisição PUT para atualizar o perfil
       await axiosInstance.put('/profile/update', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -285,7 +282,7 @@ export default function Profile() {
     }
   };
 
-  // Enquanto carrega
+  // Exibir mensagem de carregamento enquanto os dados do perfil estão sendo carregados
   if (isLoading) {
     return (
       <Container maxW="container.lg" py={8}>
@@ -327,12 +324,10 @@ export default function Profile() {
               <Icon as={FaTruck} boxSize={6} color="white" mr={3} />
               <Box>
                 <Heading as="h1" size="lg" color="white" fontWeight="bold">
-                  {profile.role === 'DRIVER' ? 'Cadastro de Motorista' : 'Meu Perfil'}
+                  Cadastro de Motorista
                 </Heading>
                 <Text color="whiteAlpha.800" fontSize="sm">
-                  {profile.role === 'DRIVER'
-                    ? 'Mantenha seus dados sempre atualizados para operação de transporte'
-                    : 'Mantenha seus dados sempre atualizados'}
+                  Mantenha seus dados sempre atualizados para operação de transporte
                 </Text>
               </Box>
             </Flex>
@@ -344,7 +339,7 @@ export default function Profile() {
               gap={{ base: 8, md: 12 }}
               alignItems="start"
             >
-              {/* Coluna esquerda: Foto (sempre aparece) */}
+              {/* Coluna esquerda: Foto e documento */}
               <VStack spacing={6} align="center">
                 {/* Foto do perfil */}
                 <VStack spacing={2} width="100%">
@@ -354,7 +349,7 @@ export default function Profile() {
                     fontSize="md"
                     alignSelf="flex-start"
                   >
-                    
+                    Foto do Motorista
                   </Text>
                   <Box
                     position="relative"
@@ -395,60 +390,58 @@ export default function Profile() {
                   </Box>
                 </VStack>
 
-                {/** Se for DRIVER, exibe a área de upload de documento */}
-                {profile.role === 'DRIVER' && (
-                  <Box 
-                    bg={sectionBg} 
-                    p={4} 
-                    borderRadius="md" 
-                    boxShadow="sm"
-                    width="100%"
+                {/* CNH / Documento */}
+                <Box 
+                  bg={sectionBg} 
+                  p={4} 
+                  borderRadius="md" 
+                  boxShadow="sm"
+                  width="100%"
+                >
+                  <Text fontWeight="semibold" color={textColor} mb={3}>
+                    Documento (CNH)
+                  </Text>
+                  <Box
+                    borderWidth="1px"
+                    borderStyle="dashed"
+                    borderColor={isDocumentDragActive ? "blue.400" : borderColor}
+                    borderRadius="md"
+                    p={4}
+                    bg={inputBg}
+                    transition="all 0.2s"
+                    _hover={{ borderColor: "blue.300" }}
+                    {...getDocumentRootProps()}
+                    cursor="pointer"
+                    textAlign="center"
                   >
-                    <Text fontWeight="semibold" color={textColor} mb={3}>
-                      Documento (CNH)
-                    </Text>
-                    <Box
-                      borderWidth="1px"
-                      borderStyle="dashed"
-                      borderColor={isDocumentDragActive ? "blue.400" : borderColor}
+                    <input {...getDocumentInputProps()} />
+                    <Box 
+                      mx="auto" 
+                      mb={3} 
+                      maxH="160px" 
+                      overflow="hidden" 
+                      bg="gray.100"
                       borderRadius="md"
-                      p={4}
-                      bg={inputBg}
-                      transition="all 0.2s"
-                      _hover={{ borderColor: "blue.300" }}
-                      {...getDocumentRootProps()}
-                      cursor="pointer"
-                      textAlign="center"
                     >
-                      <input {...getDocumentInputProps()} />
-                      <Box 
-                        mx="auto" 
-                        mb={3} 
-                        maxH="160px" 
-                        overflow="hidden" 
-                        bg="gray.100"
-                        borderRadius="md"
-                      >
-                        <Image
-                          src={documentImagePreview}
-                          alt="Documento"
-                          maxH="160px"
-                          mx="auto"
-                          objectFit="contain"
-                        />
-                      </Box>
-                      <HStack spacing={2} justify="center">
-                        <Icon as={FaUpload} color={iconColor} />
-                        <Text fontSize="sm" color="gray.600">
-                          Carregar arquivo
-                        </Text>
-                      </HStack>
+                      <Image
+                        src={documentImagePreview}
+                        alt="Documento"
+                        maxH="160px"
+                        mx="auto"
+                        objectFit="contain"
+                      />
                     </Box>
+                    <HStack spacing={2} justify="center">
+                      <Icon as={FaUpload} color={iconColor} />
+                      <Text fontSize="sm" color="gray.600">
+                        Carregar arquivo
+                      </Text>
+                    </HStack>
                   </Box>
-                )}
+                </Box>
 
-                {/* Validade da CNH (só exibe se for DRIVER) */}
-                {profile.role === 'DRIVER' && profile.driverDocument.expirationDate && (
+                {/* Validade da CNH */}
+                {profile.driverDocument.expirationDate && (
                   <Box 
                     width="100%" 
                     borderRadius="md" 
@@ -595,210 +588,208 @@ export default function Profile() {
                   </Grid>
                 </Box>
 
-                {/* Se o usuário for DRIVER, exibe o formulário de CNH */}
-                {profile.role === 'DRIVER' && (
-                  <Box>
-                    <Flex 
-                      align="center" 
-                      bg={headerBg}
-                      color="white" 
-                      p={2} 
-                      ps={4}
-                      borderRadius="md" 
-                      mb={4}
-                    >
-                      <Icon as={FaIdCard} mr={2} />
-                      <Text fontWeight="medium" fontSize="md">
-                        Informações da CNH
-                      </Text>
-                    </Flex>
-                    
-                    <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
-                      {/* CPF */}
-                      <FormControl id="cpf">
-                        <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-                          CPF
-                        </FormLabel>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <Icon as={FaIdCard} color={iconColor} opacity={0.6} />
-                          </InputLeftElement>
-                          <Input
-                            bg={inputBg}
-                            borderRadius="md"
-                            pl={10}
-                            focusBorderColor="blue.500"
-                            value={profile.driverDocument.cpf}
-                            onChange={handleCPFChange}
-                            placeholder="000.000.000-00"
-                          />
-                        </InputGroup>
-                      </FormControl>
+                {/* Seção Documentos */}
+                <Box>
+                  <Flex 
+                    align="center" 
+                    bg={headerBg}
+                    color="white" 
+                    p={2} 
+                    ps={4}
+                    borderRadius="md" 
+                    mb={4}
+                  >
+                    <Icon as={FaIdCard} mr={2} />
+                    <Text fontWeight="medium" fontSize="md">
+                      Informações da CNH
+                    </Text>
+                  </Flex>
+                  
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+                    {/* CPF */}
+                    <FormControl id="cpf">
+                      <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
+                        CPF
+                      </FormLabel>
+                      <InputGroup>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FaIdCard} color={iconColor} opacity={0.6} />
+                        </InputLeftElement>
+                        <Input
+                          bg={inputBg}
+                          borderRadius="md"
+                          pl={10}
+                          focusBorderColor="blue.500"
+                          value={profile.driverDocument.cpf}
+                          onChange={handleCPFChange}
+                          placeholder="000.000.000-00"
+                        />
+                      </InputGroup>
+                    </FormControl>
 
-                      {/* Número da CNH */}
-                      <FormControl id="driverLicenseNumber">
-                        <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-                          Número CNH
-                        </FormLabel>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <Icon as={FaIdCard} color={iconColor} opacity={0.6} />
-                          </InputLeftElement>
-                          <Input
-                            bg={inputBg}
-                            borderRadius="md"
-                            pl={10}
-                            focusBorderColor="blue.500"
-                            value={profile.driverDocument.driverLicenseNumber}
-                            onChange={handleCNHChange}
-                            placeholder="00000000000"
-                          />
-                        </InputGroup>
-                      </FormControl>
+                    {/* Número da CNH */}
+                    <FormControl id="driverLicenseNumber">
+                      <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
+                        Número CNH
+                      </FormLabel>
+                      <InputGroup>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FaIdCard} color={iconColor} opacity={0.6} />
+                        </InputLeftElement>
+                        <Input
+                          bg={inputBg}
+                          borderRadius="md"
+                          pl={10}
+                          focusBorderColor="blue.500"
+                          value={profile.driverDocument.driverLicenseNumber}
+                          onChange={handleCNHChange}
+                          placeholder="00000000000"
+                        />
+                      </InputGroup>
+                    </FormControl>
 
-                      {/* Data de Emissão */}
-                      <FormControl id="dateOfIssue">
-                        <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-                          Data de Emissão
-                        </FormLabel>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <Icon as={FaCalendarAlt} color={iconColor} opacity={0.6} />
-                          </InputLeftElement>
-                          <Input
-                            bg={inputBg}
-                            borderRadius="md"
-                            pl={10}
-                            focusBorderColor="blue.500"
-                            type="date"
-                            value={profile.driverDocument.dateOfIssue}
-                            onChange={(e) =>
+                    {/* Data de Emissão */}
+                    <FormControl id="dateOfIssue">
+                      <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
+                        Data de Emissão
+                      </FormLabel>
+                      <InputGroup>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FaCalendarAlt} color={iconColor} opacity={0.6} />
+                        </InputLeftElement>
+                        <Input
+                          bg={inputBg}
+                          borderRadius="md"
+                          pl={10}
+                          focusBorderColor="blue.500"
+                          type="date"
+                          value={profile.driverDocument.dateOfIssue}
+                          onChange={(e) =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              driverDocument: {
+                                ...prev.driverDocument,
+                                dateOfIssue: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                      </InputGroup>
+                    </FormControl>
+
+                    {/* Data de Expiração */}
+                    <FormControl id="expirationDate">
+                      <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
+                        Data de Expiração
+                      </FormLabel>
+                      <InputGroup>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FaCalendarAlt} color={iconColor} opacity={0.6} />
+                        </InputLeftElement>
+                        <Input
+                          bg={inputBg}
+                          borderRadius="md"
+                          pl={10}
+                          focusBorderColor="blue.500"
+                          type="date"
+                          value={profile.driverDocument.expirationDate}
+                          onChange={(e) =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              driverDocument: {
+                                ...prev.driverDocument,
+                                expirationDate: e.target.value,
+                              },
+                            }))
+                          }
+                        />
+                      </InputGroup>
+                    </FormControl>
+
+                    {/* Estado Emissor */}
+                    <FormControl id="issuingState">
+                      <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
+                        Estado Emissor
+                      </FormLabel>
+                      <InputGroup>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FaMapMarkerAlt} color={iconColor} opacity={0.6} />
+                        </InputLeftElement>
+                        <Input
+                          bg={inputBg}
+                          borderRadius="md"
+                          pl={10}
+                          focusBorderColor="blue.500"
+                          value={profile.driverDocument.issuingState}
+                          onChange={(e) =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              driverDocument: {
+                                ...prev.driverDocument,
+                                issuingState: e.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="UF"
+                          maxLength={2}
+                        />
+                      </InputGroup>
+                    </FormControl>
+
+                    {/* Categoria */}
+                    <FormControl id="category">
+                      <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
+                        Categoria
+                      </FormLabel>
+                      <InputGroup>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FaTruck} color={iconColor} opacity={0.6} />
+                        </InputLeftElement>
+                        <Input
+                          bg={inputBg}
+                          borderRadius="md"
+                          pl={10}
+                          focusBorderColor="blue.500"
+                          value={profile.driverDocument.category}
+                          onChange={(e) =>
+                            setProfile((prev) => ({
+                              ...prev,
+                              driverDocument: {
+                                ...prev.driverDocument,
+                                category: e.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="A, B, AB..."
+                        />
+                      </InputGroup>
+                      <Flex mt={2} flexWrap="wrap" gap={1}>
+                        {['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => (
+                          <Badge 
+                            key={cat}
+                            colorScheme={profile.driverDocument.category === cat ? "blue" : "gray"}
+                            variant={profile.driverDocument.category === cat ? "solid" : "outline"}
+                            cursor="pointer"
+                            onClick={() => 
                               setProfile((prev) => ({
                                 ...prev,
                                 driverDocument: {
                                   ...prev.driverDocument,
-                                  dateOfIssue: e.target.value,
+                                  category: cat,
                                 },
                               }))
                             }
-                          />
-                        </InputGroup>
-                      </FormControl>
-
-                      {/* Data de Expiração */}
-                      <FormControl id="expirationDate">
-                        <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-                          Data de Expiração
-                        </FormLabel>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <Icon as={FaCalendarAlt} color={iconColor} opacity={0.6} />
-                          </InputLeftElement>
-                          <Input
-                            bg={inputBg}
+                            px={2}
+                            py={1}
                             borderRadius="md"
-                            pl={10}
-                            focusBorderColor="blue.500"
-                            type="date"
-                            value={profile.driverDocument.expirationDate}
-                            onChange={(e) =>
-                              setProfile((prev) => ({
-                                ...prev,
-                                driverDocument: {
-                                  ...prev.driverDocument,
-                                  expirationDate: e.target.value,
-                                },
-                              }))
-                            }
-                          />
-                        </InputGroup>
-                      </FormControl>
-
-                      {/* Estado Emissor */}
-                      <FormControl id="issuingState">
-                        <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-                          Estado Emissor
-                        </FormLabel>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <Icon as={FaMapMarkerAlt} color={iconColor} opacity={0.6} />
-                          </InputLeftElement>
-                          <Input
-                            bg={inputBg}
-                            borderRadius="md"
-                            pl={10}
-                            focusBorderColor="blue.500"
-                            value={profile.driverDocument.issuingState}
-                            onChange={(e) =>
-                              setProfile((prev) => ({
-                                ...prev,
-                                driverDocument: {
-                                  ...prev.driverDocument,
-                                  issuingState: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="UF"
-                            maxLength={2}
-                          />
-                        </InputGroup>
-                      </FormControl>
-
-                      {/* Categoria */}
-                      <FormControl id="category">
-                        <FormLabel fontSize="sm" fontWeight="medium" color="gray.700">
-                          Categoria
-                        </FormLabel>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <Icon as={FaTruck} color={iconColor} opacity={0.6} />
-                          </InputLeftElement>
-                          <Input
-                            bg={inputBg}
-                            borderRadius="md"
-                            pl={10}
-                            focusBorderColor="blue.500"
-                            value={profile.driverDocument.category}
-                            onChange={(e) =>
-                              setProfile((prev) => ({
-                                ...prev,
-                                driverDocument: {
-                                  ...prev.driverDocument,
-                                  category: e.target.value,
-                                },
-                              }))
-                            }
-                            placeholder="A, B, AB..."
-                          />
-                        </InputGroup>
-                        <Flex mt={2} flexWrap="wrap" gap={1}>
-                          {['A', 'B', 'C', 'D', 'E', 'AB', 'AC', 'AD', 'AE'].map(cat => (
-                            <Badge 
-                              key={cat}
-                              colorScheme={profile.driverDocument.category === cat ? "blue" : "gray"}
-                              variant={profile.driverDocument.category === cat ? "solid" : "outline"}
-                              cursor="pointer"
-                              onClick={() => 
-                                setProfile((prev) => ({
-                                  ...prev,
-                                  driverDocument: {
-                                    ...prev.driverDocument,
-                                    category: cat,
-                                  },
-                                }))
-                              }
-                              px={2}
-                              py={1}
-                              borderRadius="md"
-                            >
-                              {cat}
-                            </Badge>
-                          ))}
-                        </Flex>
-                      </FormControl>
-                    </Grid>
-                  </Box>
-                )}
+                          >
+                            {cat}
+                          </Badge>
+                        ))}
+                      </Flex>
+                    </FormControl>
+                  </Grid>
+                </Box>
 
                 {/* Botão Salvar */}
                 <Flex justify="flex-end" mt={8}>
