@@ -349,7 +349,7 @@ export default function Profile() {
                     fontSize="md"
                     alignSelf="flex-start"
                   >
-                    Foto do Motorista
+                   
                   </Text>
                   <Box
                     position="relative"
