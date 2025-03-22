@@ -20,19 +20,22 @@ const INITIAL_STEPS = [
   {
     title: "Crie seu Anúncio",
     isCompleted: false,
-    description: "Anuncie seu Truck e informe o tipo de carga que você pode transportar.",
+    description:
+      "Anuncie seu Truck e informe o tipo de carga que você pode transportar.",
     route: "/admin/motorista",
   },
   {
     title: "Complete seu perfil",
     isCompleted: false,
-    description: "Forneça dados atualizados, incluindo documentos e informações para contato.",
+    description:
+      "Forneça dados atualizados, incluindo documentos e informações para contato.",
     route: "/admin/perfil",
   },
   {
     title: "Conecte sua conta bancária",
     isCompleted: false,
-    description: "Cadastre uma conta para receber pagamentos com segurança e rapidez.",
+    description:
+      "Cadastre uma conta para receber pagamentos com segurança e rapidez.",
     route: "/admin/connect-bank-account",
   },
 ];
@@ -152,16 +155,20 @@ function StepCard({ step, stepIndex, stepsData, textColor, primaryColor }) {
         </Box>
       </Flex>
 
-      {/* Botão para rota da etapa - exibido apenas se showButton for true */}
-      {showButton && (
+      {/* 
+        Botão para rota da etapa - exibido apenas se:
+          - a etapa anterior (se existir) está concluída (showButton)
+          - e esta etapa AINDA não está concluída (!step.isCompleted)
+      */}
+      {showButton && !step.isCompleted && (
         <Flex justify="center" mt={4}>
           <Button
             as="a"
             href={step.route}
-            colorScheme={step.isCompleted ? "green" : "orange"}
+            colorScheme="orange"
             size="sm"
           >
-            {step.isCompleted ? "Ver / Editar" : "Completar Agora"}
+            Completar Agora
           </Button>
         </Flex>
       )}
@@ -186,21 +193,22 @@ export default function FinalizarEtapas() {
         // Faz 3 chamadas aos endpoints de verificação
         const [hasVehicleRes, isProfileCompleteRes, isAccountConnectedRes] =
           await Promise.all([
-            axiosInstance.get("/vehicles/has-vehicle"),           // true/false
-            axiosInstance.get("/profile/is-complete"),            // true/false
-            axiosInstance.get("/stripe/is-account-connected"),   // true/false
+            axiosInstance.get("/vehicles/has-vehicle"), // { data: true/false }
+            axiosInstance.get("/profile/is-complete"),  // { data: true/false }
+            axiosInstance.get("/stripe/is-account-connected"), // { data: true/false }
           ]);
 
-        const hasVehicle = hasVehicleRes.data;
-        const isProfileComplete = isProfileCompleteRes.data;
-        const isAccountConnected = isAccountConnectedRes.data;
+        // Precisamos usar o valor que está em response.data.data
+        const hasVehicle = hasVehicleRes.data.data;
+        const isProfileComplete = isProfileCompleteRes.data.data;
+        const isAccountConnected = isAccountConnectedRes.data.data;
 
         // Atualiza o status de cada etapa
         setStepsData((prev) => {
           const updated = [...prev];
-          updated[0].isCompleted = !!hasVehicle;          // "Crie seu Anúncio"
-          updated[1].isCompleted = !!isProfileComplete;   // "Complete seu perfil"
-          updated[2].isCompleted = !!isAccountConnected;  // "Conecte sua conta bancária"
+          updated[0].isCompleted = !!hasVehicle; // "Crie seu Anúncio"
+          updated[1].isCompleted = !!isProfileComplete; // "Complete seu perfil"
+          updated[2].isCompleted = !!isAccountConnected; // "Conecte sua conta bancária"
           return updated;
         });
       } catch (error) {
@@ -216,9 +224,7 @@ export default function FinalizarEtapas() {
   // Cálculo da porcentagem concluída
   const completedSteps = stepsData.filter((step) => step.isCompleted).length;
   const totalSteps = stepsData.length;
-  const completionPercentage = Math.round(
-    (completedSteps / totalSteps) * 100
-  );
+  const completionPercentage = Math.round((completedSteps / totalSteps) * 100);
 
   // Enquanto carrega as requisições, mostra spinner
   if (isChecking) {
