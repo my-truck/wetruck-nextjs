@@ -179,7 +179,12 @@ export default function Step2KycForm({ onNext }) {
             </FormControl>
             <FormControl id="individualEmail" isRequired>
               <FormLabel>Email</FormLabel>
-              <Input type="email" autoComplete="off" {...register('individualEmail')} placeholder="motorista@teste.com" />
+              <Input
+                type="email"
+                autoComplete="off"
+                {...register('individualEmail')}
+                placeholder="motorista@teste.com"
+              />
             </FormControl>
             <FormControl id="politicalExposure" isRequired>
               <FormLabel>Exposição Política</FormLabel>
@@ -214,14 +219,6 @@ export default function Step2KycForm({ onNext }) {
       case 4:
         return (
           <>
-            <FormControl id="mcc" isRequired>
-              <FormLabel>MCC</FormLabel>
-              <Input autoComplete="off" {...register('mcc')} placeholder="4789" />
-            </FormControl>
-            <FormControl id="productDescription" isRequired>
-              <FormLabel>Descrição do Produto</FormLabel>
-              <Input autoComplete="off" {...register('productDescription')} placeholder="Transporte e fretes" />
-            </FormControl>
             <FormControl id="routingNumber" isRequired>
               <FormLabel>Agência</FormLabel>
               <Input autoComplete="off" {...register('routingNumber')} placeholder="341-0001" />
@@ -232,7 +229,11 @@ export default function Step2KycForm({ onNext }) {
             </FormControl>
             <FormControl id="accountHolderName" isRequired>
               <FormLabel>Nome do Titular</FormLabel>
-              <Input autoComplete="off" {...register('accountHolderName')} placeholder="Nome do titular da conta" />
+              <Input
+                autoComplete="off"
+                {...register('accountHolderName')}
+                placeholder="Nome do titular da conta"
+              />
             </FormControl>
           </>
         );
