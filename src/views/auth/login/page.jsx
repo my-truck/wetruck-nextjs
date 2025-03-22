@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-// Se a versão de jwt-decode for mais antiga e tiver export default, use: import jwt_decode from "jwt-decode";
-// Caso contrário, mantenha como abaixo:
+// Utilize a exportação nomeada jwtDecode:
 import { jwtDecode } from "jwt-decode";
+
 import {
   Box,
   Button,
@@ -73,7 +73,6 @@ function Login() {
   }, [location.search, toast]);
 
   const handleSubmit = async (event) => {
-    // Impede o comportamento default do form (recarregar a página)
     event.preventDefault();
 
     setLoading(true);
@@ -90,7 +89,6 @@ function Login() {
       // Faz a requisição de login
       const response = await axios.post("/auth/login", { email, password });
 
-      // Se status for 200 ou 201, o login foi bem-sucedido
       if (response.status === 200 || response.status === 201) {
         const data = response.data;
         const token = data.data.access_token;
@@ -108,23 +106,20 @@ function Login() {
           localStorage.setItem("authToken", token);
           localStorage.setItem("user_id", userId);
 
-          // *** Adicionando novamente a lógica de decode do token ***
+          // Decodifica o token para pegar o payload, inclusive a role
           try {
             const decoded = jwtDecode(token);
             localStorage.setItem("tokenPayload", JSON.stringify(decoded));
 
-            // Log do payload completo
             console.log("Payload decodificado:", decoded);
-
-            // Se houver campo 'role' ou outro no payload, basta acessar
             console.log("Role do usuário (se existir):", decoded.role || "Sem role no token");
 
-            // Caso queira salvar no localStorage também
+            // Salva a role na chave "Role" para ser lida posteriormente
             if (decoded.role) {
-              localStorage.setItem("userRole", decoded.role);
+              localStorage.setItem("Role", decoded.role);
             }
 
-            // Se quiser salvar campos específicos do token, por exemplo email e name
+            // Salva outros campos, se desejar
             if (decoded.email) {
               localStorage.setItem("userEmail", decoded.email);
             }
@@ -134,12 +129,10 @@ function Login() {
           } catch (decodeError) {
             console.error("Erro ao decodificar token:", decodeError);
           }
-          // *** Fim da lógica de decode do token ***
 
-          // Salva também o fullName no localStorage
           localStorage.setItem("userFullName", fullName);
 
-          // Redireciona para a página desejada
+          // Redireciona para a página inicial da dashboard
           navigate("/admin/default");
         } else {
           setError("Token ou User ID não recebido. Por favor, tente novamente.");
@@ -150,14 +143,13 @@ function Login() {
       }
     } catch (err) {
       console.error("Erro no login:", err);
-      // Exemplo: se o backend responder 401, é credencial inválida
+
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
         setError("Erro de conexão com o servidor.");
       }
     } finally {
-      // Finaliza o loading, mantendo o email digitado
       setLoading(false);
     }
   };
@@ -190,7 +182,6 @@ function Login() {
             Insira suas credenciais para acessar a Dashboard.
           </Text>
 
-          {/* Se houver mensagem de erro, exibe o Alert */}
           {error && (
             <Alert status="error" mb="20px">
               <AlertIcon />
@@ -198,7 +189,6 @@ function Login() {
             </Alert>
           )}
 
-          {/* Form controlado pelo React */}
           <form onSubmit={handleSubmit}>
             <FormControl mb="24px">
               <FormLabel ms="4px" fontSize="sm" fontWeight="500" htmlFor="email">

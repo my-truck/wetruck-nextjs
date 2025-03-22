@@ -31,24 +31,24 @@ export default function UserReports() {
   const bgLight = useColorModeValue("white", "gray.800");
   const textColor = useColorModeValue(secondaryColor, "white");
 
-  // Verificação de autenticação
+  // Verificação de autenticação + busca da role no LocalStorage
   useEffect(() => {
-    const checkAuthentication = () => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        setIsAuthenticated(true);
-        try {
-          const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-          setUserRole(userData.role || 'CUSTOMER');
-        } catch (error) {
-          console.error("Erro ao obter role do usuário:", error);
-          setUserRole('CUSTOMER');
-        }
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      setIsAuthenticated(true);
+
+      // Pegamos a role que já foi salva no LocalStorage no momento do login
+      const roleInStorage = localStorage.getItem('Role');
+      if (roleInStorage) {
+        setUserRole(roleInStorage);
       } else {
-        setIsAuthenticated(false);
+        // Fallback caso não haja "Role" salva
+        setUserRole('CUSTOMER');
       }
-    };
-    checkAuthentication();
+
+    } else {
+      setIsAuthenticated(false);
+    }
   }, []);
 
   // Redireciona para login se não estiver autenticado
@@ -67,13 +67,14 @@ export default function UserReports() {
     );
   }
 
-  // Conteúdo condicional baseado no userRole
+  // Função que retorna o conteúdo específico para cada role
   const getContent = () => {
     if (userRole === 'DRIVER') {
       return {
         title1: "Encontre cargas",
         title2: "para sua próxima viagem",
-        subtitle: "Conectamos você com fretadores que precisam de seus serviços. Encontre cargas disponíveis e gerencie seus fretes em um só lugar.",
+        subtitle:
+          "Conectamos você com fretadores que precisam de seus serviços. Encontre cargas disponíveis e gerencie seus fretes em um só lugar.",
         primaryButton: {
           text: "Ver Cargas Disponíveis",
           action: () => navigate('/admin/cargas-disponiveis'),
@@ -87,14 +88,16 @@ export default function UserReports() {
         highlights: [
           { icon: FaTruck, text: "Cargas verificadas" },
           { icon: FaMapMarkerAlt, text: "Rotas otimizadas" },
-          { icon: FaUserAlt, text: "Clientes confiáveis" }
-        ]
+          { icon: FaUserAlt, text: "Clientes confiáveis" },
+        ],
       };
     } else {
+      // Role CUSTOMER (ou fallback)
       return {
         title1: "Faça seu pedido",
         title2: "de forma fácil",
-        subtitle: "Seu frete com segurança. Torne-se nosso parceiro e anuncie seu frete, clique em \"Sou Motorista\".",
+        subtitle:
+          "Seu frete com segurança. Torne-se nosso parceiro e anuncie seu frete, clique em \"Sou Motorista\".",
         primaryButton: {
           text: "Sou Motorista",
           action: () => navigate('/admin/motorista'),
@@ -108,8 +111,8 @@ export default function UserReports() {
         highlights: [
           { icon: FaTruck, text: "Motoristas verificados" },
           { icon: FaMapMarkerAlt, text: "Entregas em todo o Brasil" },
-          { icon: FaUserAlt, text: "Experiência garantida" }
-        ]
+          { icon: FaUserAlt, text: "Experiência garantida" },
+        ],
       };
     }
   };
@@ -151,7 +154,7 @@ export default function UserReports() {
         zIndex="0"
       />
 
-      {/* Conteúdo principal - ajustado o mt conforme necessidade */}
+      {/* Conteúdo principal */}
       <Container maxW="1200px" zIndex="1" mt="-5%">
         <Flex
           direction={{ base: "column", lg: "row" }}
@@ -169,7 +172,6 @@ export default function UserReports() {
             pr={{ base: 0, lg: 8 }}
             mb={{ base: 8, lg: 0 }}
           >
-            {/* Badge no topo */}
             <Badge 
               colorScheme="orange" 
               fontSize="md" 
@@ -183,7 +185,6 @@ export default function UserReports() {
               {userRole === 'DRIVER' ? 'Área do Motorista' : 'Área do Cliente'}
             </Badge>
             
-            {/* Título principal */}
             <Box>
               <Text
                 fontSize={{ base: "3xl", md: "5xl", lg: "6xl" }}
@@ -283,7 +284,7 @@ export default function UserReports() {
             </HStack>
           </VStack>
 
-          {/* Imagem ilustrativa sem sombra, fundo ou quadrado */}
+          {/* Imagem ilustrativa */}
           <Box
             width={{ base: "100%", lg: "50%" }}
             position="relative"
@@ -291,14 +292,12 @@ export default function UserReports() {
             justifyContent="center"
             alignItems="center"
           >
-            {/* Removido o Box de fundo rotacionado e quaisquer sombras na imagem */}
             <Image
               src={dashboardImage}
               alt="Ilustração de pedidos de frete"
               maxW="90%"
               objectFit="contain"
               zIndex="1"
-              /* sem boxShadow, sem bg="white", sem p={4} */
             />
           </Box>
         </Flex>
