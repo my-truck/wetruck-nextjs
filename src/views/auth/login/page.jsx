@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 // Se a versão de jwt-decode for mais antiga e tiver export default, use: import jwt_decode from "jwt-decode";
+// Caso contrário, mantenha como abaixo:
 import { jwtDecode } from "jwt-decode";
 import {
   Box,
@@ -107,17 +108,23 @@ function Login() {
           localStorage.setItem("authToken", token);
           localStorage.setItem("user_id", userId);
 
-          // Tenta decodificar o token
+          // *** Adicionando novamente a lógica de decode do token ***
           try {
             const decoded = jwtDecode(token);
             localStorage.setItem("tokenPayload", JSON.stringify(decoded));
 
-            // Se houver 'role', salva também
+            // Log do payload completo
+            console.log("Payload decodificado:", decoded);
+
+            // Se houver campo 'role' ou outro no payload, basta acessar
+            console.log("Role do usuário (se existir):", decoded.role || "Sem role no token");
+
+            // Caso queira salvar no localStorage também
             if (decoded.role) {
               localStorage.setItem("userRole", decoded.role);
             }
 
-            // Salva email, name etc. caso existam
+            // Se quiser salvar campos específicos do token, por exemplo email e name
             if (decoded.email) {
               localStorage.setItem("userEmail", decoded.email);
             }
@@ -127,8 +134,9 @@ function Login() {
           } catch (decodeError) {
             console.error("Erro ao decodificar token:", decodeError);
           }
+          // *** Fim da lógica de decode do token ***
 
-          // Salva nome completo
+          // Salva também o fullName no localStorage
           localStorage.setItem("userFullName", fullName);
 
           // Redireciona para a página desejada
@@ -151,8 +159,6 @@ function Login() {
     } finally {
       // Finaliza o loading, mantendo o email digitado
       setLoading(false);
-      // Note que não limpamos o campo password aqui,
-      // então o usuário continua vendo o mesmo valor
     }
   };
 

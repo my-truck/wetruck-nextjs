@@ -188,7 +188,7 @@ export default function FinalizarEtapas() {
           await Promise.all([
             axiosInstance.get("/vehicles/has-vehicle"),           // true/false
             axiosInstance.get("/profile/is-complete"),            // true/false
-            axiosInstance.get("/profile/is-account-connected"),   // true/false
+            axiosInstance.get("/stripe/is-account-connected"),   // true/false
           ]);
 
         const hasVehicle = hasVehicleRes.data;
