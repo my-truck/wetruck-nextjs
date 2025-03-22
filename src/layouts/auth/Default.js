@@ -44,19 +44,17 @@ function AuthIllustration({ children, illustrationBackground }) {
           >
             <Flex gap="4" fontSize="sm" mb="2">
               <Link href="#" color="white" _hover={{ textDecoration: "underline" }}>
-                Support
+                Suporte
               </Link>
               <Link href="#" color="white" _hover={{ textDecoration: "underline" }}>
-                License
+                Termo de Uso
               </Link>
               <Link href="#" color="white" _hover={{ textDecoration: "underline" }}>
-                Terms of Use
+                Privacidade
               </Link>
-              <Link href="#" color="white" _hover={{ textDecoration: "underline" }}>
-                Blog
-              </Link>
+              
             </Flex>
-            <Text fontSize="sm" mt="2">© 2024 We Truck. Todos os Direitos Reservados.</Text>
+            <Text fontSize="sm" mt="2">© 2025 We Truck. Todos os Direitos Reservados.</Text>
           </Flex>
         </Flex>
       </Box>
