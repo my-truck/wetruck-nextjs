@@ -72,10 +72,13 @@ function Login() {
   }, [location.search, toast]);
 
   const handleSubmit = async (event) => {
+    // Impede o comportamento default do form (recarregar a página)
     event.preventDefault();
+
     setLoading(true);
     setError("");
 
+    // Verifica se os campos estão preenchidos
     if (!email || !password) {
       setError("Por favor, preencha todos os campos.");
       setLoading(false);
@@ -83,11 +86,12 @@ function Login() {
     }
 
     try {
+      // Faz a requisição de login
       const response = await axios.post("/auth/login", { email, password });
 
+      // Se status for 200 ou 201, o login foi bem-sucedido
       if (response.status === 200 || response.status === 201) {
         const data = response.data;
-        // Token e UserID retornados pela API
         const token = data.data.access_token;
         const userId = data.data.user_id;
 
@@ -99,27 +103,21 @@ function Login() {
           "Nome não informado";
 
         if (token && userId) {
-          // Armazena token e userId
+          // Salva token e userId no localStorage
           localStorage.setItem("authToken", token);
           localStorage.setItem("user_id", userId);
 
-          // Decodifica o token e armazena o payload completo no localStorage
+          // Tenta decodificar o token
           try {
             const decoded = jwtDecode(token);
             localStorage.setItem("tokenPayload", JSON.stringify(decoded));
 
-            // Log do payload completo
-            console.log("Payload decodificado:", decoded);
-
-            // Se houver campo 'role' ou outro no payload, basta acessar:
-            console.log("Role do usuário (se existir):", decoded.role || "Sem role no token");
-
-            // Caso queira salvar no localStorage também
+            // Se houver 'role', salva também
             if (decoded.role) {
               localStorage.setItem("userRole", decoded.role);
             }
 
-            // Se quiser salvar campos específicos do token, por exemplo email e name
+            // Salva email, name etc. caso existam
             if (decoded.email) {
               localStorage.setItem("userEmail", decoded.email);
             }
@@ -130,14 +128,10 @@ function Login() {
             console.error("Erro ao decodificar token:", decodeError);
           }
 
-          // Armazena também o fullName
+          // Salva nome completo
           localStorage.setItem("userFullName", fullName);
 
-          console.log("Token recebido e armazenado:", token);
-          console.log("User ID recebido e armazenado:", userId);
-          console.log("Nome completo recebido e armazenado:", fullName);
-
-          // Redireciona para a página que você desejar
+          // Redireciona para a página desejada
           navigate("/admin/default");
         } else {
           setError("Token ou User ID não recebido. Por favor, tente novamente.");
@@ -148,13 +142,17 @@ function Login() {
       }
     } catch (err) {
       console.error("Erro no login:", err);
+      // Exemplo: se o backend responder 401, é credencial inválida
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
         setError("Erro de conexão com o servidor.");
       }
     } finally {
+      // Finaliza o loading, mantendo o email digitado
       setLoading(false);
+      // Note que não limpamos o campo password aqui,
+      // então o usuário continua vendo o mesmo valor
     }
   };
 
@@ -183,9 +181,10 @@ function Login() {
             Entrar
           </Heading>
           <Text color={textColorDetails} fontSize="md" ms="4px" mb="36px">
-            Insira suas credenciais para acessar o painel.
+            Insira suas credenciais para acessar a Dashboard.
           </Text>
 
+          {/* Se houver mensagem de erro, exibe o Alert */}
           {error && (
             <Alert status="error" mb="20px">
               <AlertIcon />
@@ -193,6 +192,7 @@ function Login() {
             </Alert>
           )}
 
+          {/* Form controlado pelo React */}
           <form onSubmit={handleSubmit}>
             <FormControl mb="24px">
               <FormLabel ms="4px" fontSize="sm" fontWeight="500" htmlFor="email">
@@ -242,7 +242,6 @@ function Login() {
               </InputGroup>
             </FormControl>
 
-            {/* Link "Esqueci minha senha" */}
             <Flex justifyContent="flex-end" mt="10px">
               <ChakraLink
                 as={Link}
@@ -269,7 +268,6 @@ function Login() {
               Entrar
             </Button>
 
-            {/* Link para criar conta */}
             <Flex justifyContent="center" mt="20px">
               <ChakraLink
                 as={Link}
